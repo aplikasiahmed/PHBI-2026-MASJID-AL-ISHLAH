@@ -193,7 +193,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     // X=15 (Margin Kiri)
     doc.text(`${numberStr}. ${title}`, 15, startY, { align: 'left' });
     
-    // Jarak Judul ke Tabel
+    // Jarak Judul ke Tabel (Sudah ditambah +2 disini)
     startY += 2; 
   };
 
@@ -243,11 +243,11 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
             showFoot: 'lastPage',
             headStyles: { ...lpjHeadStyles, fillColor: [88, 28, 135] }, 
             footStyles: { ...lpjStyles, fillColor: [233, 213, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
-            // Lebar kolom NO dan TANGGAL disamakan dengan tabel lain
+            // REVISI: Lebar kolom NO, TANGGAL, NOMINAL disamakan agar LURUS
             columnStyles: { 
                 0: { halign: 'center', cellWidth: colWidthNo }, 
                 1: { cellWidth: colWidthDate, halign: 'center' },
-                2: { halign: 'right' } 
+                2: { halign: 'right', cellWidth: colWidthNominal } // FIX: Tambahkan cellWidth
             },
             margin: tableMargin,
             foot: [[
@@ -400,8 +400,10 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
      const totalExpense = data.expenses.reduce((a,b)=>a+b.nominal,0);
      const balance = totalIncome - totalExpense;
 
+     const updateDateStr = `(Update: ${formatDateTime(data.lastUpdated)}) `;
+
      autoTable(doc, {
-        startY: startY + 1, 
+        startY: startY, 
         head: [['KETERANGAN', 'NOMINAL']],
         body: [
             [{ content: 'Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
@@ -409,28 +411,68 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
             [{ content: 'Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
             [{ content: 'TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
             [{ content: 'TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
-            [{ content: `SALDO SAAT INI `, styles: { fontStyle: 'bold', textColor: [30, 64, 175], fontSize: 10 } }, { content: formatCurrency(balance), styles: { fontStyle: 'bold', fontSize: 10, textColor: [30, 64, 175], halign: 'right' } }]
+            // REVISI BARIS SALDO: BACKGROUND OREN & ALIGNMENT KANAN
+            [
+                { 
+                    content: '', // Dikosongkan, teks digambar manual di didDrawCell agar Rata Kanan
+                    styles: { 
+                        halign: 'right', // Align Right
+                        fillColor: [255, 200, 100] // REVISI: Oren Terang
+                    } 
+                }, 
+                { 
+                    content: formatCurrency(balance), 
+                    styles: { 
+                        fontStyle: 'bold', 
+                        fontSize: 10, 
+                        textColor: [30, 64, 175], 
+                        halign: 'right',
+                        fillColor: [255, 200, 100] // REVISI: Oren Terang
+                    } 
+                }
+            ]
         ],
         theme: 'grid',
         styles: lpjStyles, 
         showHead: 'firstPage', 
         margin: tableMargin,
         pageBreak: 'avoid', 
-        headStyles: { ...lpjHeadStyles, fillColor: [255, 140, 0] }, 
-        columnStyles: { 0: { halign: 'left', cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 'auto' } },
+        // REVISI: Header Oren Gelap
+        headStyles: { ...lpjHeadStyles, fillColor: [204, 85, 0] }, 
+        // REVISI: Lebar kolom 2 dipaksa 35 agar sejajar dengan tabel lain
+        columnStyles: { 
+            0: { halign: 'left', cellWidth: 'auto' }, 
+            1: { halign: 'right', cellWidth: colWidthNominal } 
+        },
         didDrawCell: (hookData) => {
-            // Draw Update Date
+            // REVISI: Draw Custom Text for Balance Row (Update... SALDO SAAT INI)
             if (hookData.section === 'body' && hookData.row.index === 5 && hookData.column.index === 0) {
                 const doc = hookData.doc;
-                doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-                const baseTextWidth = doc.getTextWidth("SALDO SAAT INI ");
-                const dateText = ` (Update: ${formatDateTime(data.lastUpdated)})`;
-                doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100);
-                const cellX = hookData.cell.x;
-                const paddingLeft = hookData.cell.padding('left');
+                const cell = hookData.cell;
+                
+                const textDate = updateDateStr;
+                const textLabel = "SALDO SAAT INI";
+
+                // Hitung Lebar Teks
+                doc.setFont("helvetica", "italic"); doc.setFontSize(8);
+                const wDate = doc.getTextWidth(textDate);
+                doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+                const wLabel = doc.getTextWidth(textLabel);
+                
+                const totalW = wDate + wLabel;
+                // Calculate X for Right Alignment
+                const startX = cell.x + cell.width - cell.padding('right') - totalW;
+                
                 // @ts-ignore
-                const finalY = hookData.cell.textPos ? hookData.cell.textPos.y : (hookData.cell.y + hookData.cell.height / 2 + 1);
-                doc.text(dateText, cellX + paddingLeft + baseTextWidth, finalY);
+                const finalY = hookData.cell.textPos ? hookData.cell.textPos.y : (cell.y + cell.height/2 + 3); 
+                
+                // Draw Date First (Left side of label)
+                doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(80); // Dark Gray
+                doc.text(textDate, startX, finalY);
+
+                // Draw Label Second (Right side)
+                doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(30, 64, 175); // Blue
+                doc.text(textLabel, startX + wDate, finalY);
             }
         }
     });
@@ -468,8 +510,12 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                 showFoot: 'lastPage',
                 headStyles: { ...compactHeadStyles, fillColor: [88, 28, 135] }, 
                 footStyles: { ...compactStyles, fillColor: [233, 213, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
-                columnStyles: { 0: { halign: 'center', textColor: [0, 0, 0], cellWidth: 15 }, 2: { halign: 'right', textColor: [0, 0, 0]} },
-                margin: tableMargin, // UPDATE MARGIN
+                // FIX: Tambahkan cellWidth pada col 2 agar sejajar juga di standard report
+                columnStyles: { 
+                    0: { halign: 'center', textColor: [0, 0, 0], cellWidth: 15 }, 
+                    2: { halign: 'right', textColor: [0, 0, 0], cellWidth: 35 } 
+                },
+                margin: tableMargin, 
                 foot: [[
                     { content: '', colSpan: 1, styles: { textColor: [0, 0, 0] }},
                     { content: 'TOTAL', styles: { halign: 'right'} },
@@ -572,7 +618,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                 3: { halign: 'right' },
                 4: { halign: 'right' },
                 5: { halign: 'right' },
-                6: { halign: 'right' },
+                6: { halign: 'right', cellWidth: 35 }, // FIX: Explicit Width 35mm
             },
             didParseCell: (data) => {
                 if (data.section === 'body') {
@@ -683,6 +729,8 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         doc.setFont("helvetica", "bold");
         doc.setTextColor(0, 0, 0);
         doc.text("LAPORAN REKAPITULASI DANA PHBI", 105, rekapY, { align: 'center' });
+        
+        const updateDateStr = `(Update: ${formatDateTime(data.lastUpdated)}) `;
 
         autoTable(doc, {
             startY: rekapY + 4, 
@@ -693,40 +741,64 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                 [{ content: 'Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
                 [{ content: 'TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
                 [{ content: 'TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
-                [{ content: `SALDO SAAT INI `, styles: { fontStyle: 'bold', textColor: [30, 64, 175], fontSize: 10 } }, { content: formatCurrency(balance), styles: { fontStyle: 'bold', fontSize: 10, textColor: [30, 64, 175], halign: 'right' } }]
+                // REVISI BARIS SALDO: BACKGROUND OREN & ALIGNMENT KANAN
+                [
+                    { 
+                        content: '', 
+                        styles: { 
+                            halign: 'right', 
+                            fillColor: [255, 200, 100] // Oren Terang
+                        } 
+                    }, 
+                    { 
+                        content: formatCurrency(balance), 
+                        styles: { 
+                            fontStyle: 'bold', 
+                            fontSize: 10, 
+                            textColor: [30, 64, 175], 
+                            halign: 'right',
+                            fillColor: [255, 200, 100] // Oren Terang
+                        } 
+                    }
+                ]
             ],
             theme: 'grid',
             styles: compactStyles,
             showHead: 'firstPage',
             margin: tableMargin, 
             pageBreak: 'avoid', 
-            headStyles: { ...compactHeadStyles, fillColor: [255, 140, 0] }, 
+            // REVISI: Header Oren Gelap
+            headStyles: { ...compactHeadStyles, fillColor: [204, 85, 0] }, 
+            // FIX: Explicit Width 35mm
             columnStyles: {
                 0: { halign: 'left', cellWidth: 'auto' }, 
-                1: { halign: 'right', cellWidth: 'auto' } 
+                1: { halign: 'right', cellWidth: 35 } 
             },
             didDrawCell: (hookData) => {
                 if (hookData.section === 'body' && hookData.row.index === 5 && hookData.column.index === 0) {
                     const doc = hookData.doc;
-                    
-                    doc.setFont("helvetica", "bold");
-                    doc.setFontSize(10);
-                    const baseTextWidth = doc.getTextWidth("SALDO SAAT INI ");
-                    
-                    const dateText = ` (Update: ${formatDateTime(data.lastUpdated)})`;
-                    
-                    doc.setFont("helvetica", "italic");
-                    doc.setFontSize(8);
-                    doc.setTextColor(100);
+                    const cell = hookData.cell;
+                    const textDate = updateDateStr;
+                    const textLabel = "SALDO SAAT INI";
 
-                    const cellX = hookData.cell.x;
-                    const paddingLeft = hookData.cell.padding('left');
-                    const finalX = cellX + paddingLeft + baseTextWidth;
+                    // Measure
+                    doc.setFont("helvetica", "italic"); doc.setFontSize(8);
+                    const wDate = doc.getTextWidth(textDate);
+                    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+                    const wLabel = doc.getTextWidth(textLabel);
                     
+                    const totalW = wDate + wLabel;
+                    const startX = cell.x + cell.width - cell.padding('right') - totalW;
                     // @ts-ignore
                     const finalY = hookData.cell.textPos ? hookData.cell.textPos.y : (hookData.cell.y + hookData.cell.height / 2 + 1);
 
-                    doc.text(dateText, finalX, finalY);
+                    // Draw Date First
+                    doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(80);
+                    doc.text(textDate, startX, finalY);
+
+                    // Draw Label Second
+                    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(30, 64, 175);
+                    doc.text(textLabel, startX + wDate, finalY);
                 }
             }
         });

@@ -153,7 +153,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     startY += 5; // Jarak judul ke tabel di bawahnya (Default)
   };
 
-  // --- 1. PREVIOUS FUNDS (UPDATE: Muncul untuk 'all_financial' DAN 'all_income') ---
+  // --- URUTAN 1: PREVIOUS FUNDS (PANITIA SEBELUMNYA) ---
   if (type === 'all_financial' || type === 'all_income') {
      addTitle('LAPORAN SALDO AWAL (PANITIA SEBELUMNYA)', true);
      
@@ -170,6 +170,8 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
             body: rows,
             theme: 'grid',
             styles: compactStyles,
+            showHead: 'firstPage',
+            showFoot: 'lastPage', // REVISI: Footer TOTAL hanya di halaman terakhir
             headStyles: { ...compactHeadStyles, fillColor: [88, 28, 135] }, 
             footStyles: { ...compactStyles, fillColor: [233, 213, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
             columnStyles: { 0: { halign: 'center', textColor: [0, 0, 0], cellWidth: 15 }, 2: { halign: 'right', textColor: [0, 0, 0]} },
@@ -188,7 +190,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
      }
   }
 
-  // --- 2. WEEKLY DATA (REVERT KE FORMAT LIST SEPERTI GAMBAR) ---
+  // --- URUTAN 2: WEEKLY DATA (PEMASUKAN MINGGUAN) ---
   if (type === 'weekly' || type === 'all_income' || type === 'all_financial') {
     addTitle('LAPORAN PEMASUKAN MINGGUAN (PER RT)', type !== 'all_financial' && type !== 'all_income');
     
@@ -252,7 +254,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         totalNetAll += totalNetWeek;
     });
 
-    // Grand Total Row
+    // Grand Total Row (Ditambahkan ke BODY agar otomatis di paling bawah, tidak berulang)
     bodyData.push([
         { content: 'TOTAL PENDAPATAN BERSIH ', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8  } },
         { content: formatCurrency(totalGrossAll), styles: { fontStyle: 'bold', fontSize: 8, halign: 'right' } },
@@ -267,6 +269,8 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         body: bodyData,
         theme: 'grid',
         styles: compactStyles,
+        showHead: 'firstPage',
+        // Note: Tidak perlu showFoot disini karena TOTAL dimasukkan ke dalam BODY (baris terakhir).
         headStyles: {
             ...compactHeadStyles,
             fillColor: [13, 148, 136], // Header Hijau Tosca
@@ -301,42 +305,8 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     });
   }
 
-  // --- 3. EXPENSE DATA (Judul Disesuaikan) - PINDAH KE URUTAN 3 ---
-  if (type === 'expense' || type === 'all_financial') {
-    addTitle('LAPORAN DANA PENGELUARAN', type === 'expense');
-    
-    const rows = data.expenses.map((item, idx) => [
-      idx + 1,
-      formatDate(item.date),
-      item.purpose,
-      formatCurrency(item.nominal)
-    ]);
-
-    autoTable(doc, {
-      startY: startY,
-      head: [['NO', 'TANGGAL', 'KEPERLUAN', 'NOMINAL']],
-      body: rows,
-      theme: 'grid',
-      styles: compactStyles,
-      margin: { top: 20, bottom: 20 },
-      headStyles: { ...compactHeadStyles, fillColor: [185, 28, 28] }, 
-      footStyles: { ...compactStyles, fillColor: [254, 226, 226], textColor: [0, 0, 0], fontStyle: 'bold' },
-      // REVISI KOLOM: Tanggal fixed, Keperluan auto
-      columnStyles: { 
-          0: { halign: 'center', cellWidth: 12 }, 
-          1: { cellWidth: 28, halign: 'center' }, // Tanggal fixed
-          2: { cellWidth: 'auto' }, // Keperluan auto
-          3: { halign: 'right', cellWidth: 35 } 
-      },
-      foot: [[
-          { content: '', colSpan: 2 },
-          { content: 'TOTAL', styles: { halign: 'right' } },
-          { content: formatCurrency(data.expenses.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
-      ]]
-    });
-  }
-
-  // --- 4. DONOR DATA (Judul Disesuaikan) - PINDAH KE URUTAN 4 ---
+  // --- URUTAN 3: DONOR DATA (PEMASUKAN PROPOSAL / AMPLOP) ---
+  // REVISI: Dipindahkan ke SINI (Sebelum Pengeluaran)
   if (type === 'donor' || type === 'all_income' || type === 'all_financial') {
     addTitle('LAPORAN PEMASUKAN PROPOSAL / AMPLOP', type === 'donor');
 
@@ -353,6 +323,8 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       body: rows,
       theme: 'grid',
       styles: compactStyles,
+      showHead: 'firstPage',
+      showFoot: 'lastPage', // REVISI: Footer TOTAL hanya di halaman terakhir
       margin: { top: 20, bottom: 20 },
       headStyles: { ...compactHeadStyles, fillColor: [30, 64, 175] }, 
       footStyles: { ...compactStyles, fillColor: [219, 234, 254], textColor: [0, 0, 0], fontStyle: 'bold' },
@@ -371,7 +343,45 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     });
   }
 
-  // --- 5. REKAPITULASI (Only for All Financial) ---
+  // --- URUTAN 4: EXPENSE DATA (PENGELUARAN) ---
+  // REVISI: Dipindahkan ke SINI (Setelah Proposal)
+  if (type === 'expense' || type === 'all_financial') {
+    addTitle('LAPORAN DANA PENGELUARAN', type === 'expense');
+    
+    const rows = data.expenses.map((item, idx) => [
+      idx + 1,
+      formatDate(item.date),
+      item.purpose,
+      formatCurrency(item.nominal)
+    ]);
+
+    autoTable(doc, {
+      startY: startY,
+      head: [['NO', 'TANGGAL', 'KEPERLUAN', 'NOMINAL']],
+      body: rows,
+      theme: 'grid',
+      styles: compactStyles,
+      showHead: 'firstPage',
+      showFoot: 'lastPage', // REVISI: Footer TOTAL hanya di halaman terakhir
+      margin: { top: 20, bottom: 20 },
+      headStyles: { ...compactHeadStyles, fillColor: [185, 28, 28] }, 
+      footStyles: { ...compactStyles, fillColor: [254, 226, 226], textColor: [0, 0, 0], fontStyle: 'bold' },
+      // REVISI KOLOM: Tanggal fixed, Keperluan auto
+      columnStyles: { 
+          0: { halign: 'center', cellWidth: 12 }, 
+          1: { cellWidth: 28, halign: 'center' }, // Tanggal fixed
+          2: { cellWidth: 'auto' }, // Keperluan auto
+          3: { halign: 'right', cellWidth: 35 } 
+      },
+      foot: [[
+          { content: '', colSpan: 2 },
+          { content: 'TOTAL', styles: { halign: 'right' } },
+          { content: formatCurrency(data.expenses.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
+      ]]
+    });
+  }
+
+  // --- URUTAN 5: REKAPITULASI (RECAP) ---
   if (type === 'all_financial') {
       const totalPrev = data.previousFunds.reduce((a,b)=>a+b.nominal,0);
       const totalWeekly = data.weeklyData.reduce((a,b)=>a+b.netAmount,0);
@@ -398,7 +408,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       doc.text("LAPORAN REKAPITULASI DANA PHBI", 105, rekapY, { align: 'center' });
 
       autoTable(doc, {
-          startY: rekapY + 4, // REVISI: Jarak +4 (Standar) agar konsisten dengan tabel lainnya (mirip addTitle +5)
+          startY: rekapY + 4, 
           head: [['KETERANGAN', 'NOMINAL']],
           body: [
               [{ content: 'Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
@@ -411,14 +421,14 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
           ],
           theme: 'grid',
           styles: compactStyles,
+          showHead: 'firstPage',
           margin: { top: 20, bottom: 20 },
-          pageBreak: 'avoid', // REVISI: Tabel Rekapitulasi dilarang terpotong halaman
-          headStyles: { ...compactHeadStyles, fillColor: [255, 140, 0] }, // REVISI: Warna Header Oren
+          pageBreak: 'avoid', 
+          headStyles: { ...compactHeadStyles, fillColor: [255, 140, 0] }, 
           columnStyles: {
             0: { halign: 'left', cellWidth: 'auto' }, 
             1: { halign: 'right', cellWidth: 'auto' } 
           },
-          // REVISI: Hook untuk menggambar tanggal dengan style italic (miring) di sebelah teks Bold
           didDrawCell: (hookData) => {
                if (hookData.section === 'body' && hookData.row.index === 5 && hookData.column.index === 0) {
                    const doc = hookData.doc;
@@ -451,7 +461,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
           }
       });
       
-      // --- TERBILANG SECTION (BARU) ---
+      // --- TERBILANG SECTION ---
       // Ambil posisi Y terakhir setelah tabel selesai
       const finalY = (doc as any).lastAutoTable?.finalY;
       if (finalY) {
@@ -459,7 +469,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
           doc.setFontSize(8);
           doc.setFont("helvetica", "italic"); // Font Miring
           doc.setTextColor(0, 0, 0); // Warna Hitam
-          // REVISI: Geser ke Kanan (align: right, x: 196)
+          // Geser ke Kanan (align: right, x: 196)
           doc.text(`Terbilang : ${textTerbilang} Rupiah`, 196, finalY + 6, { align: 'right' }); 
       }
   }
@@ -472,7 +482,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     doc.setFont("helvetica", "italic");
     doc.setTextColor(100);
     
-    // REVISI FOOTER: Menambahkan teks "Pukul :" antara tanggal dan jam
+    // Footer: Menambahkan teks "Pukul :" antara tanggal dan jam
     const now = new Date();
     const dateStr = now.toLocaleDateString('id-ID');
     const timeStr = now.toLocaleTimeString('id-ID');

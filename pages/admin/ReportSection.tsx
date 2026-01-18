@@ -9,12 +9,12 @@ const ReportSection: React.FC = () => {
 
   const reportTypes = [
     { label: 'Pemasukan Mingguan (Per RT)', type: 'weekly', color: 'border-emerald-600 text-emerald-800 bg-emerald-50' },
-    // REVISI LABEL 1
     { label: 'Pemasukan Proposal / Amplop', type: 'donor', color: 'border-blue-600 text-blue-800 bg-blue-50' },
-    // REVISI LABEL 2
     { label: 'Dana Pengeluaran', type: 'expense', color: 'border-red-600 text-red-800 bg-red-50' },
     { label: 'TOTAL Pemasukan (Gabungan)', type: 'all_income', color: 'border-primary text-primary bg-emerald-100' },
     { label: 'Laporan Keuangan Lengkap (Semua)', type: 'all_financial', color: 'border-purple-800 text-purple-900 bg-purple-100' },
+    // MENU BARU
+    { label: 'LAPORAN PERTANGGUNG JAWABAN', type: 'accountability', color: 'border-gray-800 text-gray-900 bg-gray-100 shadow-md ring-1 ring-gray-200' },
   ];
 
   return (
@@ -28,7 +28,8 @@ const ReportSection: React.FC = () => {
          {reportTypes.map((rpt, idx) => (
              <div key={idx} className={`flex flex-row justify-between items-center p-2.5 md:p-4 rounded-lg border-l-4 shadow-sm ${rpt.color} bg-white border border-gray-200 gap-2 md:gap-3`}>
                 <div className="flex-1">
-                    <h3 className="font-bold text-[10px] md:text-lg leading-tight">{rpt.label}</h3>
+                    <h3 className={`font-bold text-[10px] md:text-lg leading-tight ${rpt.type === 'accountability' ? 'uppercase tracking-wide' : ''}`}>{rpt.label}</h3>
+                    {/* REVISI: Teks keterangan dihapus sesuai permintaan */}
                 </div>
                 
                 <div className="flex gap-2 flex-shrink-0">

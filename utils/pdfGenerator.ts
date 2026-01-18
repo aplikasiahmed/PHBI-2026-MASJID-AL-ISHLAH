@@ -56,7 +56,7 @@ const getBase64ImageFromURL = (url: string): Promise<string> => {
   });
 };
 
-export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'expense' | 'all_income' | 'all_financial') => {
+export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'expense' | 'all_income' | 'all_financial' | 'accountability') => {
   // SETTING UKURAN KERTAS F4 (210mm x 330mm)
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -130,37 +130,103 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       halign: 'center'
   };
 
-  // REVISI PENTING: Margin Top diubah jadi 42 agar tidak menabrak Kop Surat di halaman berikutnya
+  // --- CONFIG GAYA KHUSUS LPJ (Revisi: Padding Kecil agar height tabel kecil) ---
+  const lpjStyles: any = {
+      fontSize: 8.5, 
+      textColor: [0, 0, 0],
+      cellPadding: 1.2, // Diperkecil agar tabel tidak memakan tempat
+      valign: 'middle',
+      overflow: 'linebreak'
+  };
+
+  const lpjHeadStyles: any = {
+      fontSize: 8.5,
+      textColor: [255, 255, 255],
+      valign: 'middle',
+      halign: 'center',
+      fontStyle: 'bold'
+  };
+
   const tableMargin = { top: 42, bottom: 20 };
 
-  // Helper untuk menambah judul section dan cek halaman baru
+  // --- DEFINISI LEBAR KOLOM STANDAR AGAR LURUS (NO, TANGGAL, NOMINAL) ---
+  // NO = 10, TANGGAL = 30, NOMINAL = 35. Sisanya untuk Deskripsi.
+  const colWidthNo = 10;
+  const colWidthDate = 30;
+  const colWidthNominal = 35;
+
+  // Helper untuk judul Rata Tengah (Standard Reports)
   const addTitle = (title: string, isFirstSection = false, color: [number, number, number] = [0, 0, 0]) => {
-    // Jika bukan section pertama, kita cek apakah perlu halaman baru atau space tambahan
     if (!isFirstSection) {
         const lastTableY = (doc as any).lastAutoTable?.finalY || startY;
-        startY = lastTableY + 8; // Jarak antar SECTION tabel diperkecil
-        
-        // REVISI: Batas bawah diperketat (280mm) agar tabel tidak terpotong di kaki halaman
-        // Kertas F4 tinggi 330mm. 280mm menyisakan 50mm untuk footer & margin.
+        startY = lastTableY + 8; 
         if (startY > 280) {
             doc.addPage();
-            startY = 46; // Reset StartY jika pindah halaman (sesuai tinggi kop surat + gap)
+            startY = 46; 
         }
     }
-
-    doc.setFontSize(9); // Font judul section diperkecil
+    doc.setFontSize(9); 
     doc.setFont("helvetica", "bold");
     doc.setTextColor(color[0], color[1], color[2]); 
     doc.text(title, 105, startY, { align: 'center' });
     doc.setTextColor(0, 0, 0); 
-    startY += 5; // Jarak judul ke tabel di bawahnya (Default)
+    startY += 5; 
   };
 
-  // --- URUTAN 1: PREVIOUS FUNDS (PANITIA SEBELUMNYA) ---
-  if (type === 'all_financial' || type === 'all_income') {
-     addTitle('LAPORAN SALDO AWAL (PANITIA SEBELUMNYA)', true);
-     
-     if (data.previousFunds.length > 0) {
+  // Helper KHUSUS LPJ: Judul Rata Kiri + Penomoran + Jarak Rapat
+  const addLeftTitle = (numberStr: string, title: string, isFirstSection = false) => {
+    if (!isFirstSection) {
+        const lastTableY = (doc as any).lastAutoTable?.finalY || startY;
+        // Jarak antar section
+        startY = lastTableY + 6; 
+        
+        // Cek page break
+        if (startY > 280) {
+            doc.addPage();
+            startY = 46; 
+        }
+    }
+    // REVISI: Ukuran Font Judul Tabel diperkecil menjadi 10 (Ideal)
+    doc.setFontSize(10); 
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0, 0, 0); 
+    // X=15 (Margin Kiri)
+    doc.text(`${numberStr}. ${title}`, 15, startY, { align: 'left' });
+    
+    // Jarak Judul ke Tabel
+    startY += 2; 
+  };
+
+  // --- LOGIKA KHUSUS: LAPORAN PERTANGGUNG JAWABAN (LPJ) ---
+  if (type === 'accountability') {
+
+      // --- JUDUL UTAMA HALAMAN PERTAMA (FONT TIMES, RAPAT) ---
+      // Dicetak manual di bawah Kop Surat, hanya sekali di halaman 1
+      
+      // Menggunakan Font Times
+      doc.setFont("times", "bold"); 
+      // Ukuran Font diperkecil
+      doc.setFontSize(12); 
+      // Jarak startY diperpendek (+4 dari kop)
+      doc.text("LAPORAN PERTANGGUNG JAWABAN", 105, startY + 4, { align: 'center' });
+      
+      doc.setFontSize(10);
+      // Jarak antar baris diperpendek (+4)
+      doc.text("PANITIA PERINGATAN HARI BESAR ISLAM (PHBI)", 105, startY + 8, { align: 'center' });
+      doc.text("MAULID NABI MUHAMMAD SAW 1448 H / 2026 M", 105, startY + 12, { align: 'center' });
+      
+      doc.setFont("times", "normal");
+      doc.setFontSize(9);
+      doc.text("Masjid Jam'i Al-Ishlah KP. Teriti RW. 04", 105, startY + 16, { align: 'center' });
+
+      // Tambahkan Jarak setelah Judul Utama sebelum masuk ke Tabel I
+      // Jarak dikurangi agar tidak memakan tempat (25mm space)
+      startY += 25;
+      
+      // 1. SALDO AWAL (PREVIOUS FUNDS)
+      addLeftTitle('I', 'LAPORAN SALDO AWAL (PANITIA SEBELUMNYA)', true);
+      
+      if (data.previousFunds.length > 0) {
         const rows = data.previousFunds.map((item, idx) => [
             idx + 1,
             formatDate(item.date),
@@ -169,308 +235,511 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
 
         autoTable(doc, {
             startY: startY,
-            head: [['No', 'TANGGAL', 'NOMINAL']],
+            head: [['NO', 'TANGGAL', 'NOMINAL']],
             body: rows,
             theme: 'grid',
-            styles: compactStyles,
-            showHead: 'firstPage',
+            styles: lpjStyles, 
+            showHead: 'everyPage', 
             showFoot: 'lastPage',
-            headStyles: { ...compactHeadStyles, fillColor: [88, 28, 135] }, 
-            footStyles: { ...compactStyles, fillColor: [233, 213, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
-            columnStyles: { 0: { halign: 'center', textColor: [0, 0, 0], cellWidth: 15 }, 2: { halign: 'right', textColor: [0, 0, 0]} },
-            margin: tableMargin, // UPDATE MARGIN
+            headStyles: { ...lpjHeadStyles, fillColor: [88, 28, 135] }, 
+            footStyles: { ...lpjStyles, fillColor: [233, 213, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
+            // Lebar kolom NO dan TANGGAL disamakan dengan tabel lain
+            columnStyles: { 
+                0: { halign: 'center', cellWidth: colWidthNo }, 
+                1: { cellWidth: colWidthDate, halign: 'center' },
+                2: { halign: 'right' } 
+            },
+            margin: tableMargin,
             foot: [[
-                { content: '', colSpan: 1, styles: { textColor: [0, 0, 0] }},
+                { content: '', colSpan: 1 },
                 { content: 'TOTAL', styles: { halign: 'right'} },
-                { content: formatCurrency(data.previousFunds.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right', textColor: [0, 0, 0] } }
+                { content: formatCurrency(data.previousFunds.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
             ]]
         });
      } else {
-         doc.setFontSize(8);
-         doc.setFont("helvetica", "italic");
-         doc.text("(Tidak ada data dana awal)", 105, startY + 4, { align: 'center' });
-         (doc as any).lastAutoTable = { finalY: startY + 8 }; 
+         doc.setFontSize(10); doc.setFont("helvetica", "italic");
+         doc.text("(Tidak ada data dana awal)", 15, startY + 5);
+         (doc as any).lastAutoTable = { finalY: startY + 8 };
      }
-  }
 
-  // --- URUTAN 2: WEEKLY DATA (PEMASUKAN MINGGUAN) ---
-  if (type === 'weekly' || type === 'all_income' || type === 'all_financial') {
-    addTitle('LAPORAN PEMASUKAN MINGGUAN (PER RT)', type !== 'all_financial' && type !== 'all_income');
-    
-    // Grouping Data
-    const groupedByWeek: Record<string, any[]> = {};
-    data.weeklyData.forEach(item => {
-        if (!groupedByWeek[item.week]) groupedByWeek[item.week] = [];
-        groupedByWeek[item.week].push(item);
-    });
+     // 2. PEMASUKAN MINGGUAN (RINGKASAN SESUAI PERMINTAAN)
+     addLeftTitle('II', 'LAPORAN PEMASUKAN MINGGUAN');
 
-    const sortedWeeks = Object.keys(groupedByWeek).sort((a, b) => {
-        const numA = parseInt(a.match(/\d+/)?.[0] || '0');
-        const numB = parseInt(b.match(/\d+/)?.[0] || '0');
+     // Grouping Logic: Aggregate per Minggu
+     const groupedWeeks: Record<string, { date: string, netTotal: number, name: string }> = {};
+     data.weeklyData.forEach(item => {
+        if (!groupedWeeks[item.week]) {
+            groupedWeeks[item.week] = {
+                date: item.date, // Ambil tanggal pertama yang ketemu
+                netTotal: 0,
+                name: item.week
+            };
+        }
+        groupedWeeks[item.week].netTotal += item.netAmount;
+     });
+
+     const summaryWeeks = Object.values(groupedWeeks).sort((a, b) => {
+        const numA = parseInt(a.name.match(/\d+/)?.[0] || '0');
+        const numB = parseInt(b.name.match(/\d+/)?.[0] || '0');
         return numA - numB;
+     });
+
+     // Format Baru: NO | TANGGAL | MINGGU KE | NOMINAL
+     const summaryRows = summaryWeeks.map((item, idx) => [
+         idx + 1,
+         formatDate(item.date),
+         item.name, // MINGGU KE
+         formatCurrency(item.netTotal) // NOMINAL
+     ]);
+
+     const totalWeeklyNet = summaryWeeks.reduce((a, b) => a + b.netTotal, 0);
+
+     autoTable(doc, {
+        startY: startY,
+        // REVISI HEADERS: SESUAI REQUEST
+        head: [['NO', 'TANGGAL', 'MINGGU KE', 'NOMINAL']], 
+        body: summaryRows,
+        theme: 'grid',
+        styles: lpjStyles, 
+        showHead: 'everyPage', 
+        showFoot: 'lastPage',
+        margin: tableMargin,
+        headStyles: { ...lpjHeadStyles, fillColor: [13, 148, 136] }, // Tosca
+        footStyles: { ...lpjStyles, fillColor: [204, 251, 241], textColor: [0, 0, 0], fontStyle: 'bold' },
+        // Kunci Lebar Kolom agar Lurus dengan tabel bawah
+        columnStyles: { 
+            0: { halign: 'center', cellWidth: colWidthNo }, // NO 10mm
+            1: { halign: 'center', cellWidth: colWidthDate }, // TANGGAL 30mm
+            2: { halign: 'left', cellWidth: 'auto' }, // MINGGU KE (Auto fill)
+            3: { halign: 'right', cellWidth: colWidthNominal } // NOMINAL 35mm
+        },
+        foot: [[
+            { content: '', colSpan: 2 },
+            { content: 'TOTAL', styles: { halign: 'right'} },
+            { content: formatCurrency(totalWeeklyNet), styles: { halign: 'right' } }
+        ]]
+     });
+
+     // 3. PEMASUKAN PROPOSAL / AMPLOP
+     addLeftTitle('III', 'LAPORAN PEMASUKAN PROPOSAL / AMPLOP');
+     
+     const donorRows = data.donors.map((item, idx) => [
+         idx + 1,
+         formatDate(item.date),
+         item.name,
+         formatCurrency(item.nominal)
+     ]);
+
+     autoTable(doc, {
+        startY: startY,
+        head: [['NO', 'TANGGAL', 'SUMBER DANA / DONATUR', 'NOMINAL']],
+        body: donorRows,
+        theme: 'grid',
+        styles: lpjStyles, 
+        showHead: 'everyPage', 
+        showFoot: 'lastPage',
+        margin: tableMargin,
+        headStyles: { ...lpjHeadStyles, fillColor: [30, 64, 175] }, // Blue
+        footStyles: { ...lpjStyles, fillColor: [219, 234, 254], textColor: [0, 0, 0], fontStyle: 'bold' },
+        // Kunci Lebar Kolom
+        columnStyles: { 
+            0: { halign: 'center', cellWidth: colWidthNo }, // NO 10mm
+            1: { halign: 'center', cellWidth: colWidthDate }, // TANGGAL 30mm
+            2: { halign: 'left', cellWidth: 'auto' }, // SUMBER DANA (Auto)
+            3: { halign: 'right', cellWidth: colWidthNominal } // NOMINAL 35mm
+        },
+        foot: [[
+            { content: '', colSpan: 2 },
+            { content: 'TOTAL', styles: { halign: 'right' } },
+            { content: formatCurrency(data.donors.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
+        ]]
+     });
+
+     // 4. PENGELUARAN
+     addLeftTitle('IV', 'LAPORAN DANA PENGELUARAN');
+
+     const expenseRows = data.expenses.map((item, idx) => [
+        idx + 1,
+        formatDate(item.date),
+        item.purpose,
+        formatCurrency(item.nominal)
+      ]);
+  
+      autoTable(doc, {
+        startY: startY,
+        head: [['NO', 'TANGGAL', 'KEPERLUAN', 'NOMINAL']],
+        body: expenseRows,
+        theme: 'grid',
+        styles: lpjStyles, 
+        showHead: 'everyPage', 
+        showFoot: 'lastPage',
+        margin: tableMargin,
+        headStyles: { ...lpjHeadStyles, fillColor: [185, 28, 28] }, // Red
+        footStyles: { ...lpjStyles, fillColor: [254, 226, 226], textColor: [0, 0, 0], fontStyle: 'bold' },
+        // Kunci Lebar Kolom
+        columnStyles: { 
+            0: { halign: 'center', cellWidth: colWidthNo }, // NO 10mm
+            1: { halign: 'center', cellWidth: colWidthDate }, // TANGGAL 30mm
+            2: { halign: 'left', cellWidth: 'auto' }, // KEPERLUAN (Auto)
+            3: { halign: 'right', cellWidth: colWidthNominal } // NOMINAL 35mm
+        },
+        foot: [[
+            { content: '', colSpan: 2 },
+            { content: 'TOTAL', styles: { halign: 'right' } },
+            { content: formatCurrency(data.expenses.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
+        ]]
+      });
+
+     // 5. REKAPITULASI
+     addLeftTitle('V', 'LAPORAN REKAPITULASI DANA PHBI');
+
+     const totalPrev = data.previousFunds.reduce((a,b)=>a+b.nominal,0);
+     const totalWeekly = data.weeklyData.reduce((a,b)=>a+b.netAmount,0); // Same as summary total
+     const totalDonor = data.donors.reduce((a,b)=>a+b.nominal,0);
+     const totalIncome = totalPrev + totalWeekly + totalDonor;
+     const totalExpense = data.expenses.reduce((a,b)=>a+b.nominal,0);
+     const balance = totalIncome - totalExpense;
+
+     autoTable(doc, {
+        startY: startY + 2, 
+        head: [['KETERANGAN', 'NOMINAL']],
+        body: [
+            [{ content: 'Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: 'Total Pemasukan Bersih Mingguan (Ringkasan)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalWeekly), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: 'Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: 'TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
+            [{ content: 'TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
+            [{ content: `SALDO SAAT INI `, styles: { fontStyle: 'bold', textColor: [30, 64, 175], fontSize: 10 } }, { content: formatCurrency(balance), styles: { fontStyle: 'bold', fontSize: 10, textColor: [30, 64, 175], halign: 'right' } }]
+        ],
+        theme: 'grid',
+        styles: lpjStyles, 
+        showHead: 'firstPage', 
+        margin: tableMargin,
+        pageBreak: 'avoid', 
+        headStyles: { ...lpjHeadStyles, fillColor: [255, 140, 0] }, 
+        columnStyles: { 0: { halign: 'left', cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 'auto' } },
+        didDrawCell: (hookData) => {
+            // Draw Update Date
+            if (hookData.section === 'body' && hookData.row.index === 5 && hookData.column.index === 0) {
+                const doc = hookData.doc;
+                doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+                const baseTextWidth = doc.getTextWidth("SALDO SAAT INI ");
+                const dateText = ` (Update: ${formatDateTime(data.lastUpdated)})`;
+                doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100);
+                const cellX = hookData.cell.x;
+                const paddingLeft = hookData.cell.padding('left');
+                // @ts-ignore
+                const finalY = hookData.cell.textPos ? hookData.cell.textPos.y : (hookData.cell.y + hookData.cell.height / 2 + 1);
+                doc.text(dateText, cellX + paddingLeft + baseTextWidth, finalY);
+            }
+        }
     });
 
-    const bodyData: any[] = [];
-    let totalGrossAll = 0;
-    let totalConsAll = 0;
-    let totalCommAll = 0;
-    let totalNetAll = 0;
+    // Terbilang
+    const finalY = (doc as any).lastAutoTable?.finalY;
+    if (finalY) {
+        const textTerbilang = terbilang(balance);
+        doc.setFontSize(9); doc.setFont("helvetica", "italic"); doc.setTextColor(0, 0, 0);
+        doc.text(`Terbilang : ${textTerbilang} Rupiah`, 196, finalY + 6, { align: 'right' }); 
+    }
 
-    sortedWeeks.forEach(week => {
-        const items = groupedByWeek[week];
-        // Sort items by RT
-        items.sort((a, b) => a.rt.localeCompare(b.rt));
+  } else {
+    // --- ELSE: LOGIKA STANDARD REPORT (MINGGUAN DETAIL, DST) ---
+    // (Kode lama tetap berjalan di blok ini menggunakan compactStyles)
 
-        let totalGrossWeek = 0;
-        let totalConsWeek = 0;
-        let totalCommWeek = 0;
-        let totalNetWeek = 0;
-
-        items.forEach(item => {
-            bodyData.push([
-                item.week,
+    // --- URUTAN 1: PREVIOUS FUNDS (PANITIA SEBELUMNYA) ---
+    if (type === 'all_financial' || type === 'all_income') {
+        addTitle('LAPORAN SALDO AWAL (PANITIA SEBELUMNYA)', true);
+        
+        if (data.previousFunds.length > 0) {
+            const rows = data.previousFunds.map((item, idx) => [
+                idx + 1,
                 formatDate(item.date),
-                item.rt,
-                formatCurrency(item.grossAmount),
-                formatCurrency(item.consumptionCut),
-                formatCurrency(item.commissionCut),
-                formatCurrency(item.netAmount)
+                formatCurrency(item.nominal)
             ]);
-            totalGrossWeek += item.grossAmount;
-            totalConsWeek += item.consumptionCut;
-            totalCommWeek += item.commissionCut;
-            totalNetWeek += item.netAmount;
+
+            autoTable(doc, {
+                startY: startY,
+                head: [['No', 'TANGGAL', 'NOMINAL']],
+                body: rows,
+                theme: 'grid',
+                styles: compactStyles,
+                showHead: 'firstPage',
+                showFoot: 'lastPage',
+                headStyles: { ...compactHeadStyles, fillColor: [88, 28, 135] }, 
+                footStyles: { ...compactStyles, fillColor: [233, 213, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
+                columnStyles: { 0: { halign: 'center', textColor: [0, 0, 0], cellWidth: 15 }, 2: { halign: 'right', textColor: [0, 0, 0]} },
+                margin: tableMargin, // UPDATE MARGIN
+                foot: [[
+                    { content: '', colSpan: 1, styles: { textColor: [0, 0, 0] }},
+                    { content: 'TOTAL', styles: { halign: 'right'} },
+                    { content: formatCurrency(data.previousFunds.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right', textColor: [0, 0, 0] } }
+                ]]
+            });
+        } else {
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "italic");
+            doc.text("(Tidak ada data dana awal)", 105, startY + 4, { align: 'center' });
+            (doc as any).lastAutoTable = { finalY: startY + 8 }; 
+        }
+    }
+
+    // --- URUTAN 2: WEEKLY DATA (PEMASUKAN MINGGUAN) ---
+    if (type === 'weekly' || type === 'all_income' || type === 'all_financial') {
+        addTitle('LAPORAN PEMASUKAN MINGGUAN (PER RT)', type !== 'all_financial' && type !== 'all_income');
+        
+        const groupedByWeek: Record<string, any[]> = {};
+        data.weeklyData.forEach(item => {
+            if (!groupedByWeek[item.week]) groupedByWeek[item.week] = [];
+            groupedByWeek[item.week].push(item);
         });
 
-        // Add Subtotal Row Per Week
+        const sortedWeeks = Object.keys(groupedByWeek).sort((a, b) => {
+            const numA = parseInt(a.match(/\d+/)?.[0] || '0');
+            const numB = parseInt(b.match(/\d+/)?.[0] || '0');
+            return numA - numB;
+        });
+
+        const bodyData: any[] = [];
+        let totalGrossAll = 0;
+        let totalConsAll = 0;
+        let totalCommAll = 0;
+        let totalNetAll = 0;
+
+        sortedWeeks.forEach(week => {
+            const items = groupedByWeek[week];
+            items.sort((a, b) => a.rt.localeCompare(b.rt));
+
+            let totalGrossWeek = 0;
+            let totalConsWeek = 0;
+            let totalCommWeek = 0;
+            let totalNetWeek = 0;
+
+            items.forEach(item => {
+                bodyData.push([
+                    item.week,
+                    formatDate(item.date),
+                    item.rt,
+                    formatCurrency(item.grossAmount),
+                    formatCurrency(item.consumptionCut),
+                    formatCurrency(item.commissionCut),
+                    formatCurrency(item.netAmount)
+                ]);
+                totalGrossWeek += item.grossAmount;
+                totalConsWeek += item.consumptionCut;
+                totalCommWeek += item.commissionCut;
+                totalNetWeek += item.netAmount;
+            });
+
+            bodyData.push([
+                { content: `Total ${week}`, colSpan: 3, styles: { halign: 'right', fontStyle: 'bold', textColor: [6, 78, 59] } }, 
+                { content: formatCurrency(totalGrossWeek), styles: { fontStyle: 'bold', textColor: [6, 78, 59], halign: 'right' } },
+                { content: formatCurrency(totalConsWeek), styles: { fontStyle: 'bold', textColor: [185, 28, 28], halign: 'right' } }, 
+                { content: formatCurrency(totalCommWeek), styles: { fontStyle: 'bold', textColor: [185, 28, 28], halign: 'right' } }, 
+                { content: formatCurrency(totalNetWeek), styles: { fontStyle: 'bold', textColor: [6, 78, 59], halign: 'right' } }
+            ]);
+
+            totalGrossAll += totalGrossWeek;
+            totalConsAll += totalConsWeek;
+            totalCommAll += totalCommWeek;
+            totalNetAll += totalNetWeek;
+        });
+
         bodyData.push([
-            { content: `Total ${week}`, colSpan: 3, styles: { halign: 'right', fontStyle: 'bold', textColor: [6, 78, 59] } }, // Tosca text
-            { content: formatCurrency(totalGrossWeek), styles: { fontStyle: 'bold', textColor: [6, 78, 59], halign: 'right' } },
-            { content: formatCurrency(totalConsWeek), styles: { fontStyle: 'bold', textColor: [185, 28, 28], halign: 'right' } }, // Red
-            { content: formatCurrency(totalCommWeek), styles: { fontStyle: 'bold', textColor: [185, 28, 28], halign: 'right' } }, // Red
-            { content: formatCurrency(totalNetWeek), styles: { fontStyle: 'bold', textColor: [6, 78, 59], halign: 'right' } }
+            { content: 'TOTAL PENDAPATAN BERSIH ', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8  } },
+            { content: formatCurrency(totalGrossAll), styles: { fontStyle: 'bold', fontSize: 8, halign: 'right' } },
+            { content: formatCurrency(totalConsAll), styles: { fontStyle: 'bold', fontSize: 8, halign: 'right' } },
+            { content: formatCurrency(totalCommAll), styles: { fontStyle: 'bold', fontSize: 8, halign: 'right' } },
+            { content: formatCurrency(totalNetAll), styles: { fontStyle: 'bold', fontSize: 8, halign: 'right' } }
         ]);
 
-        totalGrossAll += totalGrossWeek;
-        totalConsAll += totalConsWeek;
-        totalCommAll += totalCommWeek;
-        totalNetAll += totalNetWeek;
-    });
+        autoTable(doc, {
+            startY: startY,
+            head: [['MINGGU', 'TANGGAL', 'RT', 'PEMASUKAN', 'KONSUMSI 5%', 'KOMISI 10%', 'PENDAPATAN BERSIH']],
+            body: bodyData,
+            theme: 'grid',
+            styles: compactStyles,
+            showHead: 'firstPage',
+            margin: tableMargin, 
+            headStyles: {
+                ...compactHeadStyles,
+                fillColor: [13, 148, 136], 
+            },
+            columnStyles: {
+                0: { cellWidth: 20, halign: 'center' }, 
+                1: { cellWidth: 25, halign: 'center' }, 
+                2: { cellWidth: 12, halign: 'center' }, 
+                3: { halign: 'right' },
+                4: { halign: 'right' },
+                5: { halign: 'right' },
+                6: { halign: 'right' },
+            },
+            didParseCell: (data) => {
+                if (data.section === 'body') {
+                    const row = data.row.raw as any[];
+                    const isSummaryRow = row[0] && typeof row[0] === 'object';
+                    if (isSummaryRow) {
+                        data.cell.styles.fillColor = [204, 251, 241]; 
+                    } else {
+                        if (data.column.index === 4 || data.column.index === 5) {
+                            data.cell.styles.textColor = [255, 0, 0];
+                        }
+                    }
+                }
+            }
+        });
+    }
 
-    // Grand Total Row (Ditambahkan ke BODY agar otomatis di paling bawah, tidak berulang)
-    bodyData.push([
-        { content: 'TOTAL PENDAPATAN BERSIH ', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8  } },
-        { content: formatCurrency(totalGrossAll), styles: { fontStyle: 'bold', fontSize: 8, halign: 'right' } },
-        { content: formatCurrency(totalConsAll), styles: { fontStyle: 'bold', fontSize: 8, halign: 'right' } },
-        { content: formatCurrency(totalCommAll), styles: { fontStyle: 'bold', fontSize: 8, halign: 'right' } },
-        { content: formatCurrency(totalNetAll), styles: { fontStyle: 'bold', fontSize: 8, halign: 'right' } }
-    ]);
+    // --- URUTAN 3: DONOR DATA ---
+    if (type === 'donor' || type === 'all_income' || type === 'all_financial') {
+        addTitle('LAPORAN PEMASUKAN PROPOSAL / AMPLOP', type === 'donor');
 
-    autoTable(doc, {
+        const rows = data.donors.map((item, idx) => [
+        idx + 1,
+        formatDate(item.date),
+        item.name,
+        formatCurrency(item.nominal)
+        ]);
+
+        autoTable(doc, {
         startY: startY,
-        head: [['MINGGU', 'TANGGAL', 'RT', 'PEMASUKAN', 'KONSUMSI 5%', 'KOMISI 10%', 'PENDAPATAN BERSIH']],
-        body: bodyData,
+        head: [['NO', 'TANGGAL', 'SUMBER DANA / DONATUR', 'NOMINAL']],
+        body: rows,
         theme: 'grid',
         styles: compactStyles,
         showHead: 'firstPage',
-        margin: tableMargin, // UPDATE MARGIN
-        headStyles: {
-            ...compactHeadStyles,
-            fillColor: [13, 148, 136], // Header Hijau Tosca
+        showFoot: 'lastPage',
+        margin: tableMargin, 
+        headStyles: { ...compactHeadStyles, fillColor: [30, 64, 175] }, 
+        footStyles: { ...compactStyles, fillColor: [219, 234, 254], textColor: [0, 0, 0], fontStyle: 'bold' },
+        columnStyles: { 
+            0: { halign: 'center', cellWidth: 12 }, 
+            1: { cellWidth: 28, halign: 'center' }, 
+            2: { cellWidth: 'auto' }, 
+            3: { halign: 'right', cellWidth: 35 } 
         },
-        columnStyles: {
-            0: { cellWidth: 20, halign: 'center' }, // Minggu
-            1: { cellWidth: 25, halign: 'center' }, // Tanggal
-            2: { cellWidth: 12, halign: 'center' }, // RT
-            3: { halign: 'right' },
-            4: { halign: 'right' },
-            5: { halign: 'right' },
-            6: { halign: 'right' },
+        foot: [[
+            { content: '', colSpan: 2 },
+            { content: 'TOTAL', styles: { halign: 'right' } }, 
+            { content: formatCurrency(data.donors.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
+        ]]
+        });
+    }
+
+    // --- URUTAN 4: EXPENSE DATA ---
+    if (type === 'expense' || type === 'all_financial') {
+        addTitle('LAPORAN DANA PENGELUARAN', type === 'expense');
+        
+        const rows = data.expenses.map((item, idx) => [
+        idx + 1,
+        formatDate(item.date),
+        item.purpose,
+        formatCurrency(item.nominal)
+        ]);
+
+        autoTable(doc, {
+        startY: startY,
+        head: [['NO', 'TANGGAL', 'KEPERLUAN', 'NOMINAL']],
+        body: rows,
+        theme: 'grid',
+        styles: compactStyles,
+        showHead: 'firstPage',
+        showFoot: 'lastPage',
+        margin: tableMargin, 
+        headStyles: { ...compactHeadStyles, fillColor: [185, 28, 28] }, 
+        footStyles: { ...compactStyles, fillColor: [254, 226, 226], textColor: [0, 0, 0], fontStyle: 'bold' },
+        columnStyles: { 
+            0: { halign: 'center', cellWidth: 12 }, 
+            1: { cellWidth: 28, halign: 'center' }, 
+            2: { cellWidth: 'auto' }, 
+            3: { halign: 'right', cellWidth: 35 } 
         },
-        didParseCell: (data) => {
-             if (data.section === 'body') {
-                const row = data.row.raw as any[];
-                
-                // Cek jika ini baris Subtotal atau Grand Total (berdasarkan struktur object di col 1)
-                const isSummaryRow = row[0] && typeof row[0] === 'object';
-                
-                if (isSummaryRow) {
-                    // Background Tosca Muda untuk baris total
-                    data.cell.styles.fillColor = [204, 251, 241]; 
-                } else {
-                    // Warna teks Merah untuk kolom potongan di baris biasa
-                    if (data.column.index === 4 || data.column.index === 5) {
-                         data.cell.styles.textColor = [255, 0, 0];
-                    }
-                }
-             }
+        foot: [[
+            { content: '', colSpan: 2 },
+            { content: 'TOTAL', styles: { halign: 'right' } },
+            { content: formatCurrency(data.expenses.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
+        ]]
+        });
+    }
+
+    // --- URUTAN 5: REKAPITULASI ---
+    if (type === 'all_financial') {
+        const totalPrev = data.previousFunds.reduce((a,b)=>a+b.nominal,0);
+        const totalWeekly = data.weeklyData.reduce((a,b)=>a+b.netAmount,0);
+        const totalDonor = data.donors.reduce((a,b)=>a+b.nominal,0);
+        const totalIncome = totalPrev + totalWeekly + totalDonor;
+        const totalExpense = data.expenses.reduce((a,b)=>a+b.nominal,0);
+        const balance = totalIncome - totalExpense;
+
+        const lastTableY = (doc as any).lastAutoTable?.finalY || startY;
+        let rekapY = lastTableY + 10; 
+        
+        if (rekapY > 250) {
+            doc.addPage();
+            rekapY = 46; 
         }
-    });
-  }
 
-  // --- URUTAN 3: DONOR DATA (PEMASUKAN PROPOSAL / AMPLOP) ---
-  if (type === 'donor' || type === 'all_income' || type === 'all_financial') {
-    addTitle('LAPORAN PEMASUKAN PROPOSAL / AMPLOP', type === 'donor');
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0, 0, 0);
+        doc.text("LAPORAN REKAPITULASI DANA PHBI", 105, rekapY, { align: 'center' });
 
-    const rows = data.donors.map((item, idx) => [
-      idx + 1,
-      formatDate(item.date),
-      item.name,
-      formatCurrency(item.nominal)
-    ]);
+        autoTable(doc, {
+            startY: rekapY + 4, 
+            head: [['KETERANGAN', 'NOMINAL']],
+            body: [
+                [{ content: 'Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+                [{ content: 'Total Pemasukan Bersih Mingguan (Per RT)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalWeekly), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+                [{ content: 'Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+                [{ content: 'TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
+                [{ content: 'TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
+                [{ content: `SALDO SAAT INI `, styles: { fontStyle: 'bold', textColor: [30, 64, 175], fontSize: 10 } }, { content: formatCurrency(balance), styles: { fontStyle: 'bold', fontSize: 10, textColor: [30, 64, 175], halign: 'right' } }]
+            ],
+            theme: 'grid',
+            styles: compactStyles,
+            showHead: 'firstPage',
+            margin: tableMargin, 
+            pageBreak: 'avoid', 
+            headStyles: { ...compactHeadStyles, fillColor: [255, 140, 0] }, 
+            columnStyles: {
+                0: { halign: 'left', cellWidth: 'auto' }, 
+                1: { halign: 'right', cellWidth: 'auto' } 
+            },
+            didDrawCell: (hookData) => {
+                if (hookData.section === 'body' && hookData.row.index === 5 && hookData.column.index === 0) {
+                    const doc = hookData.doc;
+                    
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(10);
+                    const baseTextWidth = doc.getTextWidth("SALDO SAAT INI ");
+                    
+                    const dateText = ` (Update: ${formatDateTime(data.lastUpdated)})`;
+                    
+                    doc.setFont("helvetica", "italic");
+                    doc.setFontSize(8);
+                    doc.setTextColor(100);
 
-    autoTable(doc, {
-      startY: startY,
-      head: [['NO', 'TANGGAL', 'SUMBER DANA / DONATUR', 'NOMINAL']],
-      body: rows,
-      theme: 'grid',
-      styles: compactStyles,
-      showHead: 'firstPage',
-      showFoot: 'lastPage',
-      margin: tableMargin, // UPDATE MARGIN
-      headStyles: { ...compactHeadStyles, fillColor: [30, 64, 175] }, 
-      footStyles: { ...compactStyles, fillColor: [219, 234, 254], textColor: [0, 0, 0], fontStyle: 'bold' },
-      // REVISI KOLOM: Tanggal fixed, Sumber Dana auto
-      columnStyles: { 
-          0: { halign: 'center', cellWidth: 12 }, 
-          1: { cellWidth: 28, halign: 'center' }, // Tanggal fixed
-          2: { cellWidth: 'auto' }, // Sumber Dana auto
-          3: { halign: 'right', cellWidth: 35 } 
-      },
-      foot: [[
-          { content: '', colSpan: 2 },
-          { content: 'TOTAL', styles: { halign: 'right' } }, 
-          { content: formatCurrency(data.donors.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
-      ]]
-    });
-  }
+                    const cellX = hookData.cell.x;
+                    const paddingLeft = hookData.cell.padding('left');
+                    const finalX = cellX + paddingLeft + baseTextWidth;
+                    
+                    // @ts-ignore
+                    const finalY = hookData.cell.textPos ? hookData.cell.textPos.y : (hookData.cell.y + hookData.cell.height / 2 + 1);
 
-  // --- URUTAN 4: EXPENSE DATA (PENGELUARAN) ---
-  if (type === 'expense' || type === 'all_financial') {
-    addTitle('LAPORAN DANA PENGELUARAN', type === 'expense');
-    
-    const rows = data.expenses.map((item, idx) => [
-      idx + 1,
-      formatDate(item.date),
-      item.purpose,
-      formatCurrency(item.nominal)
-    ]);
-
-    autoTable(doc, {
-      startY: startY,
-      head: [['NO', 'TANGGAL', 'KEPERLUAN', 'NOMINAL']],
-      body: rows,
-      theme: 'grid',
-      styles: compactStyles,
-      showHead: 'firstPage',
-      showFoot: 'lastPage',
-      margin: tableMargin, // UPDATE MARGIN
-      headStyles: { ...compactHeadStyles, fillColor: [185, 28, 28] }, 
-      footStyles: { ...compactStyles, fillColor: [254, 226, 226], textColor: [0, 0, 0], fontStyle: 'bold' },
-      // REVISI KOLOM: Tanggal fixed, Keperluan auto
-      columnStyles: { 
-          0: { halign: 'center', cellWidth: 12 }, 
-          1: { cellWidth: 28, halign: 'center' }, // Tanggal fixed
-          2: { cellWidth: 'auto' }, // Keperluan auto
-          3: { halign: 'right', cellWidth: 35 } 
-      },
-      foot: [[
-          { content: '', colSpan: 2 },
-          { content: 'TOTAL', styles: { halign: 'right' } },
-          { content: formatCurrency(data.expenses.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
-      ]]
-    });
-  }
-
-  // --- URUTAN 5: REKAPITULASI (RECAP) ---
-  if (type === 'all_financial') {
-      const totalPrev = data.previousFunds.reduce((a,b)=>a+b.nominal,0);
-      const totalWeekly = data.weeklyData.reduce((a,b)=>a+b.netAmount,0);
-      const totalDonor = data.donors.reduce((a,b)=>a+b.nominal,0);
-      const totalIncome = totalPrev + totalWeekly + totalDonor;
-      const totalExpense = data.expenses.reduce((a,b)=>a+b.nominal,0);
-      const balance = totalIncome - totalExpense;
-
-      // Cek halaman baru untuk rekap
-      const lastTableY = (doc as any).lastAutoTable?.finalY || startY;
-      let rekapY = lastTableY + 10; // Beri jarak sedikit dari tabel sebelumnya
-      
-      // REVISI PENTING: Ambang batas (Threshold) Page Break Diperketat
-      if (rekapY > 250) {
-          doc.addPage();
-          rekapY = 46; // Reset ke posisi aman dibawah Kop Surat
-      }
-
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(0, 0, 0);
-      doc.text("LAPORAN REKAPITULASI DANA PHBI", 105, rekapY, { align: 'center' });
-
-      autoTable(doc, {
-          startY: rekapY + 4, 
-          head: [['KETERANGAN', 'NOMINAL']],
-          body: [
-              [{ content: 'Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-              [{ content: 'Total Pemasukan Bersih Mingguan (Per RT)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalWeekly), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-              [{ content: 'Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-              [{ content: 'TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
-              [{ content: 'TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
-              // UPDATE: Menggunakan formatDateTime pada Tanggal
-              [{ content: `SALDO SAAT INI `, styles: { fontStyle: 'bold', textColor: [30, 64, 175], fontSize: 10 } }, { content: formatCurrency(balance), styles: { fontStyle: 'bold', fontSize: 10, textColor: [30, 64, 175], halign: 'right' } }]
-          ],
-          theme: 'grid',
-          styles: compactStyles,
-          showHead: 'firstPage',
-          margin: tableMargin, // UPDATE MARGIN
-          pageBreak: 'avoid', 
-          headStyles: { ...compactHeadStyles, fillColor: [255, 140, 0] }, 
-          columnStyles: {
-            0: { halign: 'left', cellWidth: 'auto' }, 
-            1: { halign: 'right', cellWidth: 'auto' } 
-          },
-          didDrawCell: (hookData) => {
-               if (hookData.section === 'body' && hookData.row.index === 5 && hookData.column.index === 0) {
-                   const doc = hookData.doc;
-                   
-                   // 1. Hitung lebar teks "SISA SALDO SAAT INI" (Bold)
-                   doc.setFont("helvetica", "bold");
-                   doc.setFontSize(10);
-                   const baseTextWidth = doc.getTextWidth("SALDO SAAT INI ");
-                   
-                   // 2. Siapkan teks Tanggal (UPDATE: formatDateTime)
-                   const dateText = ` (Update: ${formatDateTime(data.lastUpdated)})`;
-                   
-                   // 3. Set Font Italic untuk Tanggal
-                   doc.setFont("helvetica", "italic");
-                   doc.setFontSize(8);
-                   doc.setTextColor(100);
-
-                   // 4. Hitung Posisi X dan Y
-                   const cellX = hookData.cell.x;
-                   const paddingLeft = hookData.cell.padding('left');
-                   const finalX = cellX + paddingLeft + baseTextWidth;
-                   
-                   // Gunakan textPos.y jika ada (baseline), jika tidak estimasi tengah
-                   // @ts-ignore
-                   const finalY = hookData.cell.textPos ? hookData.cell.textPos.y : (hookData.cell.y + hookData.cell.height / 2 + 1);
-
-                   // 5. Gambar Teks
-                   doc.text(dateText, finalX, finalY);
-               }
-          }
-      });
-      
-      // --- TERBILANG SECTION ---
-      // Ambil posisi Y terakhir setelah tabel selesai
-      const finalY = (doc as any).lastAutoTable?.finalY;
-      if (finalY) {
-          const textTerbilang = terbilang(balance);
-          doc.setFontSize(8);
-          doc.setFont("helvetica", "italic"); // Font Miring
-          doc.setTextColor(0, 0, 0); // Warna Hitam
-          // Geser ke Kanan (align: right, x: 196)
-          doc.text(`Terbilang : ${textTerbilang} Rupiah`, 196, finalY + 6, { align: 'right' }); 
-      }
+                    doc.text(dateText, finalX, finalY);
+                }
+            }
+        });
+        
+        const finalY = (doc as any).lastAutoTable?.finalY;
+        if (finalY) {
+            const textTerbilang = terbilang(balance);
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "italic"); 
+            doc.setTextColor(0, 0, 0); 
+            doc.text(`Terbilang : ${textTerbilang} Rupiah`, 196, finalY + 6, { align: 'right' }); 
+        }
+    }
   }
 
   // --- 4. GLOBAL LOOP: CETAK HEADER & FOOTER DI SEMUA HALAMAN ---
@@ -502,6 +771,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
           case 'donor': return 'Laporan_PHBI_Proposal_Amplop';
           case 'expense': return 'Laporan_PHBI_Pengeluaran';
           case 'all_income': return 'Laporan_PHBI_Gabungan_Pemasukan';
+          case 'accountability': return 'LAPORAN_PERTANGGUNG_JAWABAN_PHBI'; // File name baru
           default: return `Laporan_PHBI_${reportType}`;
       }
   };

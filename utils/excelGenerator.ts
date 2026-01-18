@@ -3,7 +3,7 @@ import { AppData } from '../types';
 import { formatDate, formatDateTime } from './format';
 import Swal from 'sweetalert2';
 
-export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense' | 'all_income' | 'all_financial') => {
+export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense' | 'all_income' | 'all_financial' | 'accountability') => {
   try {
       const wb = XLSX.utils.book_new();
 
@@ -13,37 +13,26 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
         const ws = XLSX.utils.aoa_to_sheet(wsData);
         
         // --- AUTO FIT COLUMN WIDTH CALCULATION ---
-        // Iterasi setiap kolom (berdasarkan jumlah header)
         const wscols = headers.map((header, colIndex) => {
-            // Mulai dengan panjang header
             let maxLength = header.toString().length;
-
-            // Cek setiap baris data untuk kolom ini
             rowData.forEach(row => {
                 const cellValue = row[colIndex];
                 if (cellValue) {
-                    // Konversi ke string (termasuk angka format rupiah nanti)
                     let cellLength = cellValue.toString().length;
-                    
-                    // Jika tipe datanya number, kita estimasi format "Rp " menambah panjang
                     if (typeof cellValue === 'number') {
                          cellLength = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(cellValue).length;
                     }
-
                     if (cellLength > maxLength) {
                         maxLength = cellLength;
                     }
                 }
             });
-
-            // Tambahkan padding extra biar lega
             return { wch: maxLength + 5 }; 
         });
 
         ws['!cols'] = wscols;
 
         // --- BORDER STYLING & CURRENCY FORMATTING ---
-        // Style Object untuk Border Tipis Semua Sisi
         const borderStyle = {
             top: { style: "thin", color: { rgb: "000000" } },
             bottom: { style: "thin", color: { rgb: "000000" } },
@@ -51,7 +40,6 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
             right: { style: "thin", color: { rgb: "000000" } }
         };
 
-        // Header Style
         const headerStyle = {
             font: { bold: true },
             alignment: { horizontal: "center", vertical: "center" },
@@ -59,8 +47,7 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
             border: borderStyle
         };
 
-        // Daftar Header yang BUKAN Mata Uang (Agar tidak diformat Rp)
-        const nonCurrencyHeaders = ['No', 'Minggu', 'RT', 'No.', 'Tanggal'];
+        const nonCurrencyHeaders = ['No', 'Minggu', 'RT', 'No.', 'Tanggal', 'Keterangan', 'Sumber Dana / Donatur', 'Keperluan'];
 
         const range = XLSX.utils.decode_range(ws['!ref'] || "A1");
         for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -68,25 +55,18 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
                 const cellRef = XLSX.utils.encode_cell({r: R, c: C});
                 if (!ws[cellRef]) continue;
 
-                // 1. TERAPKAN BORDER KE SEMUA SEL
                 if (!ws[cellRef].s) ws[cellRef].s = {};
                 ws[cellRef].s.border = borderStyle;
 
-                // 2. TERAPKAN STYLE KHUSUS HEADER
                 if (R === 0) {
                     ws[cellRef].s = { ...ws[cellRef].s, ...headerStyle };
                 }
 
-                // 3. TERAPKAN FORMAT MATA UANG (KECUALI KOLOM NO, MINGGU, RT)
-                // Cek apakah baris data (R > 0) DAN tipe datanya number ('n')
                 if (R > 0 && ws[cellRef].t === 'n') {
-                    const currentHeader = headers[C]; // Ambil nama header kolom ini
-                    
-                    // Jika header TIDAK ada dalam daftar nonCurrencyHeaders, maka format Rupiah
+                    const currentHeader = headers[C]; 
                     if (!nonCurrencyHeaders.includes(currentHeader)) {
                         ws[cellRef].z = '"Rp" #,##0';
                     } else {
-                        // Jika kolom No/Minggu/RT, pastikan format general/angka biasa (center align opsional)
                          ws[cellRef].s.alignment = { horizontal: "center", vertical: "center" };
                     }
                 }
@@ -96,8 +76,8 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
       };
 
-      // --- PREVIOUS FUNDS (UPDATE: Muncul untuk 'all_financial' DAN 'all_income') ---
-      if (type === 'all_financial' || type === 'all_income') {
+      // --- 1. SALDO AWAL ---
+      if (type === 'all_financial' || type === 'all_income' || type === 'accountability') {
           const headers = ['No', 'Tanggal', 'Nominal'];
           const rows = data.previousFunds.map((item, idx) => [
               idx + 1,
@@ -109,16 +89,16 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
           addToSheet("Dana Awal", headers, rows);
       }
 
-      // --- MINGGUAN ---
+      // --- 2. MINGGUAN (Ada 2 Mode: Detail vs Summary) ---
+      
+      // MODE A: DETAIL (Untuk type weekly, all_income, all_financial)
       if (type === 'weekly' || type === 'all_income' || type === 'all_financial') {
-        // REVISI URUTAN HEADER: Minggu -> Tanggal -> RT
         const headers = ['Minggu', 'Tanggal', 'RT', 'Pemasukan Kotor', 'Potongan Konsumsi (5%)', 'Potongan Komisi (10%)', 'Jumlah Bersih'];
         
-        // REVISI URUTAN DATA
         const rows = data.weeklyData.map(item => [
-          item.week, // String
-          formatDate(item.date), // Swapped (Before RT)
-          item.rt,   // Swapped (After Date)
+          item.week,
+          formatDate(item.date), 
+          item.rt, 
           item.grossAmount,
           item.consumptionCut,
           item.commissionCut,
@@ -134,12 +114,43 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
         ];
         rows.push(totalRow);
 
-        addToSheet("Mingguan", headers, rows);
+        addToSheet("Mingguan Detail", headers, rows);
       }
 
-      // --- DONATUR ---
-      if (type === 'donor' || type === 'all_income' || type === 'all_financial') {
-        const headers = ['No', 'Tanggal', 'Sumber Dana', 'Nominal'];
+      // MODE B: SUMMARY / RINGKASAN (KHUSUS ACCOUNTABILITY)
+      if (type === 'accountability') {
+          const headers = ['No', 'Tanggal', 'Nominal Bersih', 'Keterangan'];
+          
+          const groupedWeeks: Record<string, { date: string, netTotal: number, name: string }> = {};
+          data.weeklyData.forEach(item => {
+             if (!groupedWeeks[item.week]) {
+                 groupedWeeks[item.week] = { date: item.date, netTotal: 0, name: item.week };
+             }
+             groupedWeeks[item.week].netTotal += item.netAmount;
+          });
+     
+          const summaryWeeks = Object.values(groupedWeeks).sort((a, b) => {
+             const numA = parseInt(a.name.match(/\d+/)?.[0] || '0');
+             const numB = parseInt(b.name.match(/\d+/)?.[0] || '0');
+             return numA - numB;
+          });
+
+          const rows = summaryWeeks.map((item, idx) => [
+              idx + 1,
+              formatDate(item.date),
+              item.netTotal,
+              item.name
+          ]);
+
+          const totalRow = ['', 'TOTAL', summaryWeeks.reduce((a,b)=>a+b.netTotal,0), ''];
+          rows.push(totalRow);
+
+          addToSheet("Mingguan Ringkasan", headers, rows);
+      }
+
+      // --- 3. DONATUR ---
+      if (type === 'donor' || type === 'all_income' || type === 'all_financial' || type === 'accountability') {
+        const headers = ['No', 'Tanggal', 'Sumber Dana / Donatur', 'Nominal'];
         const rows = data.donors.map((item, idx) => [
           idx + 1,
           formatDate(item.date),
@@ -153,8 +164,8 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
         addToSheet("Donatur", headers, rows);
       }
 
-      // --- PENGELUARAN ---
-      if (type === 'expense' || type === 'all_financial') {
+      // --- 4. PENGELUARAN ---
+      if (type === 'expense' || type === 'all_financial' || type === 'accountability') {
         const headers = ['No', 'Tanggal', 'Keperluan', 'Nominal'];
         const rows = data.expenses.map((item, idx) => [
           idx + 1,
@@ -169,8 +180,8 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
         addToSheet("Pengeluaran", headers, rows);
       }
 
-      // --- REKAPITULASI ---
-      if (type === 'all_financial') {
+      // --- 5. REKAPITULASI ---
+      if (type === 'all_financial' || type === 'accountability') {
         const totalPrev = data.previousFunds.reduce((a,b)=>a+b.nominal,0);
         const totalWeekly = data.weeklyData.reduce((a,b)=>a+b.netAmount,0);
         const totalDonor = data.donors.reduce((a,b)=>a+b.nominal,0);
@@ -185,7 +196,6 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
             ['Total Pemasukan Proposal / Amplop', totalDonor],
             ['TOTAL SEMUA PEMASUKAN', totalIncome],
             ['TOTAL PENGELUARAN', totalExpense],
-            // UPDATE: Menggunakan formatDateTime
             ['SISA SALDO SAAT INI (Update: ' + formatDateTime(data.lastUpdated) + ')', balance]
         ];
         addToSheet("Rekapitulasi", headers, rows);

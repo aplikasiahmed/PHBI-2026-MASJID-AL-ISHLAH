@@ -59,7 +59,7 @@ const Footer: React.FC = () => {
 
         <div className="mt-5 md:mt-10 pt-3 md:pt-6 border-t border-emerald-800 text-center flex flex-col items-center gap-0.5">
           <p className="text-[8px] md:text-xs text-gray-400">
-            Sistem Laporan Keuangan PHBI | &copy; 2026 | by : <span className="text-gray-400">nawasyiahmed</span>
+            Sistem Keuangan PHBI | &copy; 2026 | by : <span className="text-gray-400">nawasyiahmed</span>
           </p>
           <p className="text-[9px] md:text-[11px] text-gray-400 tracking-wide">
             Masjid Jami' Al-Ishlah. All Rights Reserved.

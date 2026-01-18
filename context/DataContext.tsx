@@ -54,6 +54,7 @@ const initialData: AppData = {
 // --- PASSWORD ADMIN PUSAT (KUNCI UTAMA) ---
 const MASTER_ADMIN_PASSWORD = "ALISHLAH2026"; 
 const SESSION_KEY = 'phbi_admin_session'; // Key untuk localStorage
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 Menit Auto Logout
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [publishedData, setPublishedData] = useState<AppData>(initialData);
@@ -163,20 +164,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Load initial data
-  useEffect(() => {
-    fetchSupabaseData(false);
-
-    // Load Staged Data from LocalStorage (Draft / Admin Work in Progress only)
-    const storedStaged = localStorage.getItem('phbi_staged_data');
-    if (storedStaged) setStagedData(JSON.parse(storedStaged));
-  }, []);
-
-  // Persist Staged Data whenever it changes
-  useEffect(() => {
-    localStorage.setItem('phbi_staged_data', JSON.stringify(stagedData));
-  }, [stagedData]);
-
   const login = (username: string) => {
     setIsLoggedIn(true);
     setCurrentUser(username);
@@ -193,6 +180,70 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // LOGIKA BARU: Hapus Sesi
     localStorage.removeItem(SESSION_KEY);
   };
+
+  // Load initial data
+  useEffect(() => {
+    fetchSupabaseData(false);
+
+    // Load Staged Data from LocalStorage (Draft / Admin Work in Progress only)
+    const storedStaged = localStorage.getItem('phbi_staged_data');
+    if (storedStaged) setStagedData(JSON.parse(storedStaged));
+  }, []);
+
+  // Persist Staged Data whenever it changes
+  useEffect(() => {
+    localStorage.setItem('phbi_staged_data', JSON.stringify(stagedData));
+  }, [stagedData]);
+
+  // --- AUTO LOGOUT / IDLE TIMER LOGIC ---
+  useEffect(() => {
+    // Variable untuk menyimpan timer
+    let idleTimer: ReturnType<typeof setTimeout>;
+
+    // Fungsi yang dijalankan saat timer habis (User Idle)
+    const handleIdleLogout = () => {
+        if (isLoggedIn) {
+            logout(); // Panggil fungsi logout
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sesi Berakhir',
+                text: 'Anda telah logout otomatis karena tidak ada aktivitas selama 5 menit.',
+                confirmButtonColor: '#047857',
+                timer: 5000
+            });
+        }
+    };
+
+    // Fungsi untuk mereset timer setiap kali ada aktivitas
+    const resetTimer = () => {
+        if (!isLoggedIn) return; // Jangan jalankan jika belum login
+        
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(handleIdleLogout, IDLE_TIMEOUT_MS);
+    };
+
+    // Jika user Login, pasang event listener
+    if (isLoggedIn) {
+        // Mulai timer pertama kali
+        resetTimer();
+
+        // Daftar event yang dianggap "Aktivitas"
+        const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+        
+        // Pasang listener ke window
+        events.forEach(event => {
+            window.addEventListener(event, resetTimer);
+        });
+
+        // Cleanup function (saat unmount atau logout)
+        return () => {
+            clearTimeout(idleTimer);
+            events.forEach(event => {
+                window.removeEventListener(event, resetTimer);
+            });
+        };
+    }
+  }, [isLoggedIn]); // Effect bergantung pada status login
 
   // --- AUTHENTICATION LOGIC (SUPABASE TABLE) ---
   const verifyUser = async (u: string, p: string): Promise<boolean> => {

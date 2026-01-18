@@ -19,12 +19,12 @@ const Footer: React.FC = () => {
                       className="w-8 h-8 md:w-10 md:h-10 object-contain" 
                     />
                 </div>
-                <h3 className="font-serif text-xl md:text-lg font-bold">MASJID JAMI' AL-ISHLAH</h3>
+                <h3 className="font-serif text-base md:text-xl font-bold">MASJID JAMI' AL-ISHLAH</h3>
              </div>
-             <p className="text-xs md:text-sm text-gray-300 leading-relaxed mb-2 md:mb-4">
+             <p className="text-[8px] md:text-sm text-gray-300 leading-relaxed mb-2 md:mb-4">
                Kp. Teriti Rw. 04 Desa Karet Kec. Sepatan Kab. Tangerang
              </p>
-             <div className="flex flex-col space-y-1 md:space-y-2 text-xs md:text-sm text-gray-300">
+             <div className="flex flex-col space-y-1 md:space-y-2 text-[8px] md:text-sm text-gray-300">
                 <div className="flex items-center justify-center md:justify-start gap-2">
                     <Phone className="w-3 h-3 md:w-4 md:h-4" /> 082123456789 (Panitia)
                 </div>
@@ -36,30 +36,34 @@ const Footer: React.FC = () => {
 
           {/* Committee */}
           <div className="text-center">
-            <h4 className="font-serif text-sm md:text-lg font-bold mb-2 md:mb-4 text-gold">Panitia Inti PHBI 2026</h4>
-            <ul className="space-y-1 md:space-y-2 text-xs md:text-sm text-gray-200">
-                <li><span className="font-semibold text-white">Ketua:</span> Ahmad Farhan</li>
-                <li><span className="font-semibold text-white">Wakil Ketua:</span> Farhan</li>
-                <li><span className="font-semibold text-white">Sekretaris:</span> Ahmad Nawasyi</li>
-                <li><span className="font-semibold text-white">Bendahara:</span> Mahendra</li>
+            <h4 className="font-serif text-xs md:text-lg font-bold mb-2 md:mb-4 text-gold">Panitia Inti PHBI 2026</h4>
+            <ul className="space-y-1 md:space-y-2 text-[8px] md:text-sm text-gray-200">
+                <li><span className="text-white">Ketua :</span> Ahmad Farhan</li>
+                <li><span className="text-white">Wakil Ketua :</span> Farhan</li>
+                <li><span className="text-white">Sekretaris :</span> Ahmad Nawasyi</li>
+                <li><span className="text-white">Bendahara :</span> Mahendra</li>
             </ul>
           </div>
 
           {/* Hadith */}
-           <div className="bg-emerald-800 p-3 md:p-4 rounded-lg shadow-inner text-xs md:text-sm text-gray-200 border border-emerald-700 flex flex-col justify-center items-center">
-             <h4 className="text-center font-serif text-sm md:text-lg font-bold mb-2 text-gold">Mutiara Hadits</h4>
-             <p className="text-center italic leading-relaxed">
-               "Barang siapa membangun masjid karena Allah, maka Allah akan membangunkan baginya rumah di surga."
+           <div className="bg-emerald-800 p-3 md:p-4 rounded-lg shadow-inner text-[8px] md:text-sm text-gray-200 border border-emerald-700 flex flex-col justify-center items-center">
+             <h4 className="text-center font-serif text-xs md:text-lg font-bold mb-2 text-gold">Rasulallah SAW Bersabda</h4>
+             <p className="text-center text-[7px] italic leading-relaxed">
+               "Jika anak Adam meninggal, terputuslah amalnya kecuali tiga perkara; sedekah jariyah, ilmu yang bermanfaat atau anak saleh yang mendoakan orang tuanya"
              </p>
-             <span className="font-semibold mt-2 block not-italic text-[10px] md:text-xs text-emerald-400">
-               (HR. Bukhari & Muslim)
+             <span className="font-semibold mt-2 block not-italic text-[8px] md:text-xs text-emerald-400">
+               (HR. Muslim)
              </span>
            </div>
         </div>
 
-        <div className="mt-6 md:mt-10 pt-4 md:pt-6 border-t border-emerald-800 text-center text-[10px] md:text-xs text-gray-400">
-          &copy; 2026 | by : nawasyiahmed  
-          <br/>Masjid Jami' Al-Ishlah. All Rights Reserved.
+        <div className="mt-5 md:mt-10 pt-3 md:pt-6 border-t border-emerald-800 text-center flex flex-col items-center gap-0.5">
+          <p className="text-[8px] md:text-xs text-gray-400">
+            Sistem Laporan Keuangan PHBI | &copy; 2026 | by : <span className="text-gray-400">nawasyiahmed</span>
+          </p>
+          <p className="text-[9px] md:text-[11px] text-gray-400 tracking-wide">
+            Masjid Jami' Al-Ishlah. All Rights Reserved.
+          </p>
         </div>
       </div>
     </footer>

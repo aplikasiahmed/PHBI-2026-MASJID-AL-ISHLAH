@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../context/DataContext';
 import SummaryCard from '../components/SummaryCard';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/format';
@@ -10,6 +10,9 @@ const PublicHome: React.FC = () => {
   const { publishedData } = useData();
   const [activeDetail, setActiveDetail] = useState<'income' | 'expense' | null>(null);
   const [selectedWeek, setSelectedWeek] = useState<string>('all');
+  
+  // Ref untuk memastikan auto-select hanya terjadi sekali saat data pertama kali dimuat
+  const hasSetInitialWeek = useRef(false);
 
   // URL Assets
   const bcaLogoUrl = "https://bmcenhkcwuxnclmlcriy.supabase.co/storage/v1/object/sign/image/BCA%20icon.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iODZjZjM2NS1mNTBmLTQwMmQtYjUwMC00Mjg3YjVlYTgxYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9CQ0EgaWNvbi5wbmciLCJpYXQiOjE3Njg1NDg3NjUsImV4cCI6MTgwMDA4NDc2NX0.D0kVRrFXun72PZeP3Uxvdk-uwC3IjiL5eH30JstwMrY";
@@ -26,6 +29,28 @@ const PublicHome: React.FC = () => {
 
   // Filter Weekly Data
   const weeks = Array.from(new Set(publishedData.weeklyData.map(d => d.week))).sort();
+  
+  // AUTO SELECT LATEST WEEK LOGIC
+  useEffect(() => {
+    // Jalankan logika jika data mingguan tersedia dan belum pernah diset otomatis sebelumnya
+    if (publishedData.weeklyData.length > 0 && !hasSetInitialWeek.current) {
+        const uniqueWeeks = Array.from(new Set(publishedData.weeklyData.map(d => d.week)));
+        
+        // Sortir Descending (Minggu ke-10, Minggu ke-9, ... Minggu ke-1)
+        // Menggunakan regex untuk mengambil angkanya saja agar urutannya benar secara numerik
+        uniqueWeeks.sort((a, b) => {
+            const numA = parseInt(a.replace(/\D/g, '') || '0');
+            const numB = parseInt(b.replace(/\D/g, '') || '0');
+            return numB - numA;
+        });
+
+        if (uniqueWeeks.length > 0) {
+            setSelectedWeek(uniqueWeeks[0]); // Set ke minggu terakhir (terbesar)
+            hasSetInitialWeek.current = true; // Tandai flag agar tidak mereset pilihan user jika ada update background
+        }
+    }
+  }, [publishedData.weeklyData]);
+
   const filteredWeekly = selectedWeek === 'all' 
     ? publishedData.weeklyData 
     : publishedData.weeklyData.filter(d => d.week === selectedWeek);
@@ -55,13 +80,13 @@ const PublicHome: React.FC = () => {
 
   const handleDownloadReport = () => {
     Swal.fire({
-      title: 'Unduh Laporan?',
-      text: "Anda akan mengunduh Laporan Keuangan PHBI",
+      title: 'Downlaod Laporan?',
+      text: "Anda akan mendownloand Laporan Keuangan PHBI",
       icon: 'info',
       showCancelButton: true,
       confirmButtonColor: '#2563eb', // Blue
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Ya, Unduh',
+      confirmButtonText: 'Ya, download',
       cancelButtonText: 'Batal'
     }).then((result) => {
       if (result.isConfirmed) {
@@ -76,7 +101,7 @@ const PublicHome: React.FC = () => {
       {/* TITLE SECTION */}
       <div className="bg-white py-6 md:py-12 px-4 text-center border-b border-gray-200 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-gold to-primary"></div>
-        <h2 className="text-xl md:text-5xl font-serif font-bold text-primary mb-1 md:mb-3 drop-shadow-sm">LAPORAN DANA PHBI</h2>
+        <h2 className="text-xl md:text-4xl font-serif font-bold text-primary mb-1 md:mb-3 drop-shadow-sm">SISTEM LAPORAN KEUANGAN PHBI</h2>
         <p className="text-xs md:text-xl text-secondary font-medium tracking-wide">Maulid Nabi Muhammad SAW 1448 H | 2026 M</p>
       </div>
 
@@ -140,22 +165,23 @@ const PublicHome: React.FC = () => {
 
         {/* Section: Mingguan (Per RT) */}
         <section className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="p-3 md:p-6 bg-emerald-50 border-b border-emerald-100 flex flex-col md:flex-row justify-between items-center gap-2 md:gap-3">
+          {/* REVISI: items-center menjadi items-start untuk mobile agar rata kiri */}
+          <div className="p-3 md:p-6 bg-emerald-50 border-b border-emerald-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-3">
             <div className="flex items-center gap-2">
                 <div className="bg-emerald-600 p-1 md:p-1.5 rounded-lg text-white"><TrendingUp size={16} className="md:w-5 md:h-5" /></div>
-                <h3 className="text-sm md:text-xl font-serif font-bold text-primary">Pemasukan Mingguan</h3>
+                <h3 className="text-sm md:text-xl font-serif font-bold text-primary">Pemasukan Mingguan (Per RT)</h3>
             </div>
             <div className="relative w-full md:w-auto">
               <select 
                 value={selectedWeek} 
                 onChange={(e) => setSelectedWeek(e.target.value)}
-                className="w-full md:w-56 appearance-none bg-white border border-emerald-200 text-gray-700 text-[10px] md:text-sm rounded-full pl-3 pr-8 py-1.5 md:py-2 focus:ring-2 focus:ring-primary focus:border-primary shadow-sm font-medium"
+                className="w-full md:w-56 appearance-none bg-white border border-emerald-200 text-gray-700 text-[8px] md:text-sm rounded-full pl-3 pr-8 py-1.5 md:py-2 focus:ring-1 focus:ring-primary focus:border-primary shadow-sm font-medium"
               >
                 <option value="all">Tampilkan Semua Minggu</option>
                 {weeks.map(w => <option key={w} value={w}>{w}</option>)}
               </select>
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-emerald-600">
-                <ChevronDown size={12} className="md:w-3.5 md:h-3.5" />
+                <ChevronDown size={8} className="md:w-3.5 md:h-3.5" />
               </div>
             </div>
           </div>
@@ -215,27 +241,27 @@ const PublicHome: React.FC = () => {
                         <div className="absolute top-0 left-0 w-0.5 h-full bg-emerald-500"></div>
                         <div className="flex justify-between items-center mb-1 pb-1 border-b border-gray-100 pl-1.5">
                             <div>
-                                <span className="block font-bold text-gray-800 text-[10px] uppercase tracking-wide leading-none">{item.week}</span>
-                                <span className="text-[8px] text-gray-500 flex items-center gap-1 mt-0.5 leading-none">{formatDate(item.date)}</span>
+                                <span className="block font-bold text-gray-800 text-[8px] tracking-wide leading-none">{item.week}</span>
+                                <span className="text-[7px] text-gray-600 flex items-center gap-1 mt-0.5 leading-none">{formatDate(item.date)}</span>
                             </div>
-                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{item.rt}</span>
+                            <span className="bg-emerald-100 text-emerald-800 text-[8px] font-bold px-1.5 py-0.5 rounded-full">{item.rt}</span>
                         </div>
                         <div className="pl-1.5 space-y-0.5">
                             <div className="flex justify-between text-[8px] text-gray-800">
                                 <span>Pemasukan Kotor</span>
                                 <span>{formatCurrency(item.grossAmount)}</span>
                             </div>
-                            <div className="flex justify-between text-[8px] text-red-500">
+                            <div className="flex justify-between text-[8px] text-red-600">
                                 <span>Potongan 5%</span>
                                 <span>-{formatCurrency(item.consumptionCut)}</span>
                             </div>
-                            <div className="flex justify-between text-[8px] text-red-500">
+                            <div className="flex justify-between text-[8px] text-red-600">
                                 <span>Potongan 10%</span>
                                 <span>-{formatCurrency(item.commissionCut)}</span>
                             </div>
                             
                             <div className="flex justify-between items-center pt-1 border-t border-dashed border-gray-100 mt-0.5">
-                                <span className="font-bold text-gray-700 text-[9px]">PENDAPATAN BERSIH</span>
+                                <span className="font-bold text-gray-700 text-[8px]">Pendapatan Bersih</span>
                                 <span className="font-bold text-[9px] text-primary">{formatCurrency(item.netAmount)}</span>
                             </div>
                         </div>
@@ -443,12 +469,12 @@ const PublicHome: React.FC = () => {
         <div className="mt-6 mb-3 flex justify-center animate-fade-in-up px-4">
             <button 
                 onClick={handleDownloadReport}
-                className="group bg-white border border-red-600 hover:bg-red-600 text-red-600 hover:text-white px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 md:gap-2 transform active:scale-95 hover:scale-105 w-fit"
+                className="group bg-red-600 border border-white hover:bg-white text-white hover:text-red-600 active:bg-white active:text-red-600 px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 md:gap-2 transform active:scale-95 hover:scale-105 w-fit animate-pulse"
             >
-                <div className="bg-red-600 group-hover:bg-white text-white group-hover:text-red-600 p-0.5 md:p-1 rounded-full transition-colors flex-shrink-0">
+                <div className="bg-white group-hover:bg-red-600 text-red-600 group-hover:text-white hover:text-white group-active:bg-red-600 group-active:text-white p-0.5 md:p-1 rounded-full transition-colors flex-shrink-0">
                     <FileText size={12} className="md:w-3.5 md:h-3.5" />
                 </div>
-                <span className="text-[10px] md:text-xs tracking-wide text-center leading-none">UNDUH LAPORAN (PDF)</span>
+                <span className="text-[10px] md:text-xs tracking-wide text-center leading-none">Download Laporan Keuangan PHBI (PDF)</span>
             </button>
         </div>
 

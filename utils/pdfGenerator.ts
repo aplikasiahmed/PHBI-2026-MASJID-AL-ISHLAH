@@ -406,11 +406,11 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         startY: startY, 
         head: [['KETERANGAN', 'NOMINAL']],
         body: [
-            [{ content: 'Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-            [{ content: 'Total Pemasukan Bersih Mingguan (Ringkasan)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalWeekly), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-            [{ content: 'Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-            [{ content: 'TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
-            [{ content: 'TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
+            [{ content: ' Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: ' Total Pemasukan Bersih Mingguan (Ringkasan)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalWeekly), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: ' Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: ' TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
+            [{ content: ' TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
             // REVISI BARIS SALDO: BACKGROUND OREN & ALIGNMENT KANAN
             [
                 { 
@@ -451,20 +451,23 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                 const cell = hookData.cell;
                 
                 const textDate = updateDateStr;
-                const textLabel = "SALDO SAAT INI";
+                const textLabel = " SALDO SAAT INI";
 
-                // Hitung Lebar Teks
+                // Measure
                 doc.setFont("helvetica", "italic"); doc.setFontSize(8);
                 const wDate = doc.getTextWidth(textDate);
                 doc.setFont("helvetica", "bold"); doc.setFontSize(10);
                 const wLabel = doc.getTextWidth(textLabel);
                 
                 const totalW = wDate + wLabel;
-                // Calculate X for Right Alignment
-                const startX = cell.x + cell.width - cell.padding('right') - totalW;
                 
-                // @ts-ignore
-                const finalY = hookData.cell.textPos ? hookData.cell.textPos.y : (cell.y + cell.height/2 + 3); 
+                // FIX: Revert paddingRight to 4mm
+                const paddingRight = 4;
+                const startX = cell.x + cell.width - paddingRight - totalW;
+                
+                // FIX: Vertical Align to Middle using calculation
+                // cell.y + cell.height / 2 gives exact center. Add small offset for baseline.
+                const finalY = cell.y + (cell.height / 2) + 1.25; 
                 
                 // Draw Date First (Left side of label)
                 doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(80); // Dark Gray
@@ -779,7 +782,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                     const doc = hookData.doc;
                     const cell = hookData.cell;
                     const textDate = updateDateStr;
-                    const textLabel = "SALDO SAAT INI";
+                    const textLabel = " SALDO SAAT INI";
 
                     // Measure
                     doc.setFont("helvetica", "italic"); doc.setFontSize(8);
@@ -788,9 +791,13 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                     const wLabel = doc.getTextWidth(textLabel);
                     
                     const totalW = wDate + wLabel;
-                    const startX = cell.x + cell.width - cell.padding('right') - totalW;
-                    // @ts-ignore
-                    const finalY = hookData.cell.textPos ? hookData.cell.textPos.y : (hookData.cell.y + hookData.cell.height / 2 + 1);
+                    
+                    // FIX: Revert paddingRight to 4mm
+                    const paddingRight = 4;
+                    const startX = cell.x + cell.width - paddingRight - totalW;
+                    
+                    // FIX: Vertical Align to Middle using calculation
+                    const finalY = cell.y + (cell.height / 2) + 1.25;
 
                     // Draw Date First
                     doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(80);

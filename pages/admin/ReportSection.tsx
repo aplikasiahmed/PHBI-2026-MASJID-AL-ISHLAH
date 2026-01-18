@@ -8,13 +8,13 @@ const ReportSection: React.FC = () => {
   const { publishedData } = useData();
 
   const reportTypes = [
-    { label: 'Pemasukan Mingguan (Per RT)', type: 'weekly', color: 'border-emerald-600 text-emerald-800 bg-emerald-50' },
-    { label: 'Pemasukan Proposal / Amplop', type: 'donor', color: 'border-blue-600 text-blue-800 bg-blue-50' },
-    { label: 'Dana Pengeluaran', type: 'expense', color: 'border-red-600 text-red-800 bg-red-50' },
+    { label: 'Pemasukan Mingguan (Per RT)', type: 'weekly', color: 'border-emerald-600 text-emerald-900 bg-white' },
+    { label: 'Pemasukan Proposal / Amplop', type: 'donor', color: 'border-blue-600 text-blue-900 bg-blue-100' },
+    { label: 'Dana Pengeluaran', type: 'expense', color: 'border-red-600 text-red-900 bg-red-100' },
     { label: 'TOTAL Pemasukan (Gabungan)', type: 'all_income', color: 'border-primary text-primary bg-emerald-100' },
     { label: 'Laporan Keuangan Lengkap (Semua)', type: 'all_financial', color: 'border-purple-800 text-purple-900 bg-purple-100' },
     // MENU BARU
-    { label: 'LAPORAN PERTANGGUNG JAWABAN', type: 'accountability', color: 'border-gray-800 text-gray-900 bg-gray-100 shadow-md ring-1 ring-gray-200' },
+    { label: 'LAPORAN PERTANGGUNG JAWABAN', type: 'accountability', color: 'border-orange-600 text-orange-700 bg-orange-100 shadow-md ring-1 ring-orange-200' },
   ];
 
   return (

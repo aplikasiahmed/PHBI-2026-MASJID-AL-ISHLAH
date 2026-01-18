@@ -38,7 +38,7 @@ const PublicHome: React.FC = () => {
         
         // Sortir Descending (Minggu ke-10, Minggu ke-9, ... Minggu ke-1)
         // Menggunakan regex untuk mengambil angkanya saja agar urutannya benar secara numerik
-        uniqueWeeks.sort((a, b) => {
+        uniqueWeeks.sort((a: string, b: string) => {
             const numA = parseInt(a.replace(/\D/g, '') || '0');
             const numB = parseInt(b.replace(/\D/g, '') || '0');
             return numB - numA;

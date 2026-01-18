@@ -839,7 +839,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     const timeStr = now.toLocaleTimeString('id-ID');
 
     // LOGIC FOOTER TEXT
-    let footerLeftText = `Diunduh pada: ${dateStr}, Pukul : ${timeStr}`;
+    let footerLeftText = `didownload pada: ${dateStr}, Pukul : ${timeStr}`;
 
     if (type === 'accountability') {
         // Khusus LPJ

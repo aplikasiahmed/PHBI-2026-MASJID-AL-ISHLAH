@@ -356,7 +356,7 @@ const InputSection: React.FC = () => {
                 <div className="w-full">
                     <label className="block text-[9px] md:text-[10px] text-gray-500 mb-0.5 md:mb-1 font-semibold">Nominal</label>
                     <div className="relative">
-                        <span className="absolute left-1.5 md:left-2 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-[9px] md:text-xs pointer-events-none">Rp.</span>
+                        <span className="absolute left-1.5 md:left-2 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-[10px] md:text-xs pointer-events-none">Rp.</span>
                         <input type="text" inputMode="numeric" placeholder="0" value={prevForm.nominal} onChange={e => setPrevForm({...prevForm, nominal: formatNumberInput(e.target.value)})} className={inputRpClass} />
                     </div>
                 </div>
@@ -435,7 +435,7 @@ const InputSection: React.FC = () => {
                 <div className="col-span-1">
                     <label className="block text-[9px] md:text-[10px] text-gray-500 mb-0.5 md:mb-1 font-semibold">Pemasukan Kotor</label>
                     <div className="relative">
-                        <span className="absolute left-1.5 md:left-2 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-[9px] md:text-xs pointer-events-none">Rp.</span>
+                        <span className="absolute left-1.5 md:left-2 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-[10px] md:text-xs pointer-events-none">Rp.</span>
                         <input type="text" inputMode="numeric" placeholder="0" value={weekForm.gross} onChange={e => setWeekForm({...weekForm, gross: formatNumberInput(e.target.value)})} className={inputRpClass} />
                     </div>
                 </div>
@@ -524,7 +524,7 @@ const InputSection: React.FC = () => {
                  <div className="col-span-1">
                     <label className="block text-[9px] md:text-[10px] text-gray-500 mb-0.5 md:mb-1 font-semibold">Nominal</label>
                     <div className="relative">
-                        <span className="absolute left-1.5 md:left-2 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-[9px] md:text-xs pointer-events-none">Rp.</span>
+                        <span className="absolute left-1.5 md:left-2 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-[10px] md:text-xs pointer-events-none">Rp.</span>
                         <input type="text" inputMode="numeric" placeholder="0" value={donorForm.nominal} onChange={e => setDonorForm({...donorForm, nominal: formatNumberInput(e.target.value)})} className={inputRpClass} />
                     </div>
                  </div>
@@ -602,7 +602,7 @@ const InputSection: React.FC = () => {
                  <div className="col-span-1">
                     <label className="block text-[9px] md:text-[10px] text-gray-500 mb-0.5 md:mb-1 font-semibold">Nominal</label>
                     <div className="relative">
-                        <span className="absolute left-1.5 md:left-2 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-[9px] md:text-xs pointer-events-none">Rp.</span>
+                        <span className="absolute left-1.5 md:left-2 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-[10px] md:text-xs pointer-events-none">Rp.</span>
                         <input type="text" inputMode="numeric" placeholder="0" value={expForm.nominal} onChange={e => setExpForm({...expForm, nominal: formatNumberInput(e.target.value)})} className={inputRpClass} />
                     </div>
                  </div>

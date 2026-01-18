@@ -202,7 +202,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // --- ADMIN MANAGEMENT LOGIC ---
   const addAdminUser = async (newUsername: string, newPassword: string, masterPass: string): Promise<boolean> => {
       if (masterPass !== MASTER_ADMIN_PASSWORD) {
-          Swal.fire('Otorisasi Gagal', 'Kode Otorisasi tidak valid!', 'error');
+          Swal.fire('Kode ID Server Gagal', 'Kode ID Server tidak valid!', 'error');
           return false;
       }
       try {
@@ -242,7 +242,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const deleteAdminUser = async (id: string, masterPass: string): Promise<boolean> => {
       if (masterPass !== MASTER_ADMIN_PASSWORD) {
-          Swal.fire('Otorisasi Gagal', 'Kode Otorisasi tidak valid!', 'error');
+          Swal.fire('Kode ID Server Gagal', 'Kode ID Server tidak valid!', 'error');
           return false;
       }
       const { error } = await supabase.from('admin_users').delete().eq('id', id);

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laporan Keuangan PHBI Maulid Nabi Muhammad SAW 1448 H | 2026 M</title>
+    <meta name="description" content="Laporan Keuangan Transparan PHBI Maulid Nabi Muhammad SAW 1448 H - Masjid Jami' Al-Ishlah" />
+    
+    <!-- Tailwind CSS CDN (Untuk styling cepat) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Playfair Display (Judul) & Poppins (Teks) -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Konfigurasi Tema Warna (Emas & Hijau Masjid) -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#064e3b', // emerald-900 (Warna Dasar Masjid)
+              secondary: '#047857', // emerald-700
+              accent: '#d1fae5', // emerald-100
+              gold: '#d4af37', // Warna Emas Mewah
+              darkGold: '#b08d26',
+            },
+            fontFamily: {
+              serif: ['"Playfair Display"', 'serif'],
+              sans: ['"Poppins"', 'sans-serif'],
+            },
+            animation: {
+              'fade-in-up': 'fadeInUp 0.5s ease-out',
+            },
+            keyframes: {
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    
+    <style>
+      /* Mobile optimization for SweetAlert2 - Compact Version */
+      @media (max-width: 640px) {
+        /* Container Popup: Lebar 85% (Max 320px) agar tidak penuh layar */
+        div:where(.swal2-container) div:where(.swal2-popup) {
+          width: 85% !important;
+          max-width: 320px !important;
+          padding: 1rem !important;
+          border-radius: 12px !important;
+        }
+        
+        /* Judul: Ukuran 1.1rem */
+        div:where(.swal2-container) .swal2-title {
+          font-size: 1.1rem !important;
+          padding: 0.5rem 0 0.2rem 0 !important;
+          line-height: 1.2 !important;
+        }
+        
+        /* Isi Teks: Ukuran 0.8rem */
+        div:where(.swal2-container) .swal2-html-container {
+          font-size: 0.8rem !important;
+          margin: 0.2rem 0.5rem 0.5rem !important;
+          line-height: 1.4 !important;
+        }
+
+        /* PERBAIKAN IKON YANG TERPOTONG */
+        div:where(.swal2-container) .swal2-icon {
+          /* Kembalikan ukuran proporsional (5em) agar isi internal (ceklis/silang) pas posisinya */
+          width: 5em !important; 
+          height: 5em !important;
+          border-width: 0.25em !important;
+          
+          /* Gunakan SCALE untuk mengecilkan tampilan secara visual tanpa memotong isi */
+          transform: scale(0.5) !important; 
+          
+          /* Margin negatif untuk menghilangkan ruang kosong akibat efek scale */
+          margin: -10px auto -15px auto !important; 
+        }
+
+        /* Styling Tombol (Hanya mengecilkan ukuran font dan padding JIKA tombol ada) */
+        div:where(.swal2-container) button.swal2-styled {
+          font-size: 0.75rem !important;
+          padding: 0.4rem 0.8rem !important;
+          min-height: 32px !important;
+          margin: 0.25rem !important;
+        }
+        
+        /* Container Tombol */
+        div:where(.swal2-container) .swal2-actions {
+          margin-top: 0.5rem !important;
+          gap: 0.5rem !important;
+        }
+        
+        /* Input Field (Jika ada) */
+        div:where(.swal2-container) input.swal2-input,
+        div:where(.swal2-container) textarea.swal2-textarea {
+          height: 2rem !important;
+          padding: 0 0.5rem !important;
+          font-size: 0.8rem !important;
+          margin: 0.5rem auto 0 !important;
+          width: 90% !important;
+        }
+      }
+      
+      /* Pattern Background for Hero (Nuansa Islami) */
+      .islamic-pattern {
+        background-color: #064e3b;
+        background-image: radial-gradient(#047857 2px, transparent 2px), radial-gradient(#047857 2px, transparent 2px);
+        background-size: 32px 32px;
+        background-position: 0 0, 16px 16px;
+      }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "sweetalert2": "https://esm.sh/sweetalert2@^11.26.17",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "jspdf": "https://esm.sh/jspdf@^4.0.0",
+    "jspdf-autotable": "https://esm.sh/jspdf-autotable@^5.0.7",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "xlsx": "https://esm.sh/xlsx@^0.18.5"
+  }
+}
+</script>
+</head>
+  <body class="bg-gray-50 text-gray-800 font-sans antialiased">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

@@ -206,22 +206,22 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       // Menggunakan Font Times
       doc.setFont("times", "bold"); 
       // Ukuran Font diperkecil
-      doc.setFontSize(12); 
+      doc.setFontSize(10); 
       // Jarak startY diperpendek (+4 dari kop)
-      doc.text("LAPORAN PERTANGGUNG JAWABAN", 105, startY + 4, { align: 'center' });
+      doc.text("LAPORAN PERTANGGUNG JAWABAN", 108, startY +2 , { align: 'center' });
       
       doc.setFontSize(10);
       // Jarak antar baris diperpendek (+4)
-      doc.text("PANITIA PERINGATAN HARI BESAR ISLAM (PHBI)", 105, startY + 8, { align: 'center' });
-      doc.text("MAULID NABI MUHAMMAD SAW 1448 H / 2026 M", 105, startY + 12, { align: 'center' });
+      doc.text("PANITIA PERINGATAN HARI BESAR ISLAM (PHBI)", 108, startY + 6, { align: 'center' });
+      doc.text("MAULID NABI MUHAMMAD SAW 1448 H / 2026 M", 108, startY + 10, { align: 'center' });
       
       doc.setFont("times", "normal");
       doc.setFontSize(9);
-      doc.text("Masjid Jam'i Al-Ishlah KP. Teriti RW. 04", 105, startY + 16, { align: 'center' });
+      doc.text("Masjid Jam'i Al-Ishlah Kp. Teriti RW. 04", 108, startY + 14, { align: 'center' });
 
       // Tambahkan Jarak setelah Judul Utama sebelum masuk ke Tabel I
       // Jarak dikurangi agar tidak memakan tempat (25mm space)
-      startY += 25;
+      startY += 20;
       
       // 1. SALDO AWAL (PREVIOUS FUNDS)
       addLeftTitle('I', 'LAPORAN SALDO AWAL (PANITIA SEBELUMNYA)', true);

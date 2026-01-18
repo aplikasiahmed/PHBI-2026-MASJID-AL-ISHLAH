@@ -73,7 +73,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // --- FETCH DATA (SUPABASE ONLY) ---
   const fetchSupabaseData = async (notifyError = false) => {
     // TAMPILKAN LOADING SCREEN SAAT MUAT ULANG HALAMAN (Initial Load)
-    if (!notifyError) {
+    // REVISI: Hanya tampilkan jika TIDAK sedang login (Halaman Publik)
+    if (!notifyError && !isLoggedIn) {
         Swal.fire({
             title: 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
             text: 'Sedang proses ambil data base....',

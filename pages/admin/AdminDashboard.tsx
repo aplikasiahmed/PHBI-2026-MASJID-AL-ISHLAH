@@ -15,7 +15,7 @@ const AdminDashboard: React.FC = () => {
   const handleLogout = () => {
     Swal.fire({
       title: 'Yakin Mau Keluar?',
-      text: "Anda akan kembali ke halaman utama.",
+      text: "",
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#d33',

@@ -159,7 +159,7 @@ const UserManagementSection: React.FC = () => {
                     type="submit"
                     className="w-full bg-primary hover:bg-emerald-800 text-white font-bold py-1.5 md:py-2.5 rounded-lg shadow-sm text-[10px] md:text-sm transition active:scale-95 flex justify-center items-center gap-2 mt-2"
                   >
-                      <UserPlus size={12} className="md:w-[18px] md:h-[18px]" /> SIMPAN USER
+                      <UserPlus size={12} className="md:w-[18px] md:h-[18px]" /> TAMBAH ADMIN
                   </button>
               </form>
           </div>

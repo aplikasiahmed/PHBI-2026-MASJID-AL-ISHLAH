@@ -363,10 +363,10 @@ const InputSection: React.FC = () => {
                 <div className="flex items-end w-full">
                      <div className="flex gap-2 w-full">
                         {editingId && (
-                            <button onClick={cancelEdit} className="w-1/3 bg-blue-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
+                            <button onClick={cancelEdit} className="w-1/3 bg-red-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
                         )}
                         <button onClick={handleSavePrev} className="flex-1 bg-primary hover:bg-emerald-800 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-2">
-                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'UPDATE DATA' : 'UPDATE DRAFT') : 'SIMPAN'}
+                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN' : 'UPDATE DRAFT') : 'SIMPAN'}
                         </button>
                      </div>
                 </div>
@@ -445,7 +445,7 @@ const InputSection: React.FC = () => {
                             <button onClick={cancelEdit} className="w-1/3 bg-blue-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
                         )}
                         <button onClick={handleSaveWeek} className="flex-1 bg-primary hover:bg-emerald-800 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-2">
-                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'UPDATE DATA' : 'UPDATE DRAFT') : 'SIMPAN'}
+                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN' : 'UPDATE DRAFT') : 'SIMPAN'}
                         </button>
                     </div>
                 </div>
@@ -535,7 +535,7 @@ const InputSection: React.FC = () => {
                             <button onClick={cancelEdit} className="w-1/3 bg-blue-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
                         )}
                         <button onClick={handleSaveDonor} className="flex-1 bg-primary hover:bg-emerald-800 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-2">
-                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'Update Data' : 'UPDATE DRAFT') : 'SIMPAN'}
+                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN' : 'UPDATE DRAFT') : 'SIMPAN'}
                         </button>
                      </div>
                  </div>
@@ -613,7 +613,7 @@ const InputSection: React.FC = () => {
                             <button onClick={cancelEdit} className="w-1/3 bg-blue-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
                         )}
                         <button onClick={handleSaveExp} className="flex-1 bg-primary hover:bg-emerald-800 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-2">
-                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'UPDATE DATA' : 'UPDATE DRAFT') : 'SIMPAN'}
+                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN' : 'UPDATE DRAFT') : 'SIMPAN'}
                         </button>
                      </div>
                  </div>

@@ -406,28 +406,28 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         startY: startY, 
         head: [['KETERANGAN', 'NOMINAL']],
         body: [
-            [{ content: ' Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-            [{ content: ' Total Pemasukan Bersih Mingguan (Ringkasan)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalWeekly), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-            [{ content: ' Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-            [{ content: ' TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 9 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
-            [{ content: ' TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 9 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
+            [{ content: 'Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: 'Total Pemasukan Bersih Mingguan (Ringkasan)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalWeekly), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: 'Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: 'TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
+            [{ content: 'TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
             // REVISI BARIS SALDO: BACKGROUND OREN & ALIGNMENT KANAN
             [
                 { 
                     content: '', // Dikosongkan, teks digambar manual di didDrawCell agar Rata Kanan
                     styles: { 
                         halign: 'right', // Align Right
-                        fillColor: [255, 230, 200] // REVISI: Oren Terang
+                        fillColor: [255, 200, 100] // REVISI: Oren Terang
                     } 
                 }, 
                 { 
                     content: formatCurrency(balance), 
                     styles: { 
                         fontStyle: 'bold', 
-                        fontSize: 9, 
+                        fontSize: 10, 
                         textColor: [30, 64, 175], 
                         halign: 'right',
-                        fillColor: [255, 230, 200] // REVISI: Oren Terang
+                        fillColor: [255, 200, 100] // REVISI: Oren Terang
                     } 
                 }
             ]
@@ -451,7 +451,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                 const cell = hookData.cell;
                 
                 const textDate = updateDateStr;
-                const textLabel = " SALDO SAAT INI";
+                const textLabel = "SALDO SAAT INI";
 
                 // Measure
                 doc.setFont("helvetica", "italic"); doc.setFontSize(8);
@@ -782,7 +782,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                     const doc = hookData.doc;
                     const cell = hookData.cell;
                     const textDate = updateDateStr;
-                    const textLabel = " SALDO SAAT INI";
+                    const textLabel = "SALDO SAAT INI";
 
                     // Measure
                     doc.setFont("helvetica", "italic"); doc.setFontSize(8);
@@ -837,8 +837,16 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     const now = new Date();
     const dateStr = now.toLocaleDateString('id-ID');
     const timeStr = now.toLocaleTimeString('id-ID');
+
+    // LOGIC FOOTER TEXT
+    let footerLeftText = `Diunduh pada: ${dateStr}, Pukul : ${timeStr}`;
+
+    if (type === 'accountability') {
+        // Khusus LPJ
+        footerLeftText = `Laporan Pertanggung Jawaban Panitia PHBI 1448 H/2026 M dibuat pada ${dateStr} pukul ${timeStr}`;
+    }
     
-    doc.text(`Diunduh pada: ${dateStr}, Pukul : ${timeStr}`, 15, doc.internal.pageSize.height - 10);
+    doc.text(footerLeftText, 15, doc.internal.pageSize.height - 10);
     doc.text(`Hal ${i} dari ${pageCount}`, 195, doc.internal.pageSize.height - 10, { align: 'right' });
   }
 

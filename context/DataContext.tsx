@@ -261,13 +261,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             .select('id, username')
             .eq('username', u)
             .eq('password', p)
-            .single();
+            .limit(1); // Fetch maximum 1 record as array
 
-        if (error || !data) {
+        if (error) {
             console.error("Auth failed:", error?.message);
             return false;
         }
-        return true;
+
+        // Check if we got any data
+        if (data && data.length > 0) {
+            return true;
+        }
+        
+        return false;
     } catch (err) {
         console.error("Auth error:", err);
         return false;

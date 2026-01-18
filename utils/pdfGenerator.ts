@@ -186,8 +186,8 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
             startY = 46; 
         }
     }
-    // REVISI: Ukuran Font Judul Tabel diperkecil menjadi 10 (Ideal)
-    doc.setFontSize(10); 
+    // REVISI: Ukuran Font Judul Tabel diperkecil menjadi 8 (Sesuai Permintaan)
+    doc.setFontSize(8); 
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0, 0, 0); 
     // X=15 (Margin Kiri)
@@ -208,7 +208,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       // Ukuran Font diperkecil
       doc.setFontSize(12); 
       // Jarak startY diperpendek (+4 dari kop)
-      doc.text("LAPORAN PERTANGGUNG JAWABAN", 108, startY +2 , { align: 'center' });
+      doc.text("LAPORAN PERTANGGUNG JAWABAN", 108, startY + 2, { align: 'center' });
       
       doc.setFontSize(10);
       // Jarak antar baris diperpendek (+4)
@@ -401,7 +401,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
      const balance = totalIncome - totalExpense;
 
      autoTable(doc, {
-        startY: startY + 2, 
+        startY: startY + 1, 
         head: [['KETERANGAN', 'NOMINAL']],
         body: [
             [{ content: 'Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],

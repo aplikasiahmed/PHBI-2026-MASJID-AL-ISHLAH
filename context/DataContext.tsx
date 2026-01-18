@@ -204,12 +204,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const handleIdleLogout = () => {
         if (isLoggedIn) {
             logout(); // Panggil fungsi logout
+            
+            // REVISI: Tampilan Alert Auto Close tanpa tombol OK
             Swal.fire({
                 icon: 'warning',
                 title: 'Sesi Berakhir',
-                text: 'Anda telah logout otomatis karena tidak ada aktivitas selama 5 menit.',
-                confirmButtonColor: '#047857',
-                timer: 5000
+                text: 'Anda telah logout otomatis',
+                timer: 3000, // Menutup otomatis dalam 3 detik
+                timerProgressBar: true,
+                showConfirmButton: false, // TIDAK ADA TOMBOL OK
+                allowOutsideClick: false, // Mencegah user menutup paksa dengan klik luar
+                didClose: () => {
+                    // Opsional: Paksa refresh ke home jika diperlukan
+                    // window.location.reload(); 
+                }
             });
         }
     };

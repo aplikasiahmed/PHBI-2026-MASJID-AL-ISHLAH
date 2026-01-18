@@ -426,7 +426,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                    // 1. Hitung lebar teks "SISA SALDO SAAT INI" (Bold)
                    doc.setFont("helvetica", "bold");
                    doc.setFontSize(10);
-                   const baseTextWidth = doc.getTextWidth("SISA SALDO SAAT INI ");
+                   const baseTextWidth = doc.getTextWidth("SALDO SAAT INI ");
                    
                    // 2. Siapkan teks Tanggal (UPDATE: formatDateTime)
                    const dateText = ` (Update: ${formatDateTime(data.lastUpdated)})`;

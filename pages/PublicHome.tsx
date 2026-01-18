@@ -56,7 +56,7 @@ const PublicHome: React.FC = () => {
   const handleDownloadReport = () => {
     Swal.fire({
       title: 'Unduh Laporan?',
-      text: "Anda akan mengunduh Laporan Keuangan (PDF).",
+      text: "Anda akan mengunduh Laporan Keuangan PHBI",
       icon: 'info',
       showCancelButton: true,
       confirmButtonColor: '#2563eb', // Blue
@@ -443,9 +443,9 @@ const PublicHome: React.FC = () => {
         <div className="mt-6 mb-3 flex justify-center animate-fade-in-up px-4">
             <button 
                 onClick={handleDownloadReport}
-                className="group bg-white border border-blue-600 hover:bg-blue-600 text-blue-600 hover:text-white px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 md:gap-2 transform active:scale-95 hover:scale-105 w-fit"
+                className="group bg-white border border-red-600 hover:bg-red-600 text-red-600 hover:text-white px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 md:gap-2 transform active:scale-95 hover:scale-105 w-fit"
             >
-                <div className="bg-blue-600 group-hover:bg-white text-white group-hover:text-blue-600 p-0.5 md:p-1 rounded-full transition-colors flex-shrink-0">
+                <div className="bg-red-600 group-hover:bg-white text-white group-hover:text-red-600 p-0.5 md:p-1 rounded-full transition-colors flex-shrink-0">
                     <FileText size={12} className="md:w-3.5 md:h-3.5" />
                 </div>
                 <span className="text-[10px] md:text-xs tracking-wide text-center leading-none">UNDUH LAPORAN (PDF)</span>

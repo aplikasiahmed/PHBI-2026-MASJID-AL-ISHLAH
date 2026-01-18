@@ -64,54 +64,54 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     format: [210, 330] 
   });
   
-  // --- 1. RENDER KOP LAPORAN (KONSISTEN UNTUK SEMUA TIPE) ---
-  
-  // A. Render Logo (Try-Catch agar text tetap muncul meski logo gagal)
+  // --- 1. PREPARE LOGO (Muat sekali di awal) ---
+  let logoBase64 = '';
   try {
-    const logoBase64 = await getBase64ImageFromURL(LOGO_URL);
-    // Posisi Logo: x=15, y=10, (Lebar Besar Logo w=25, h=25
-    doc.addImage(logoBase64, 'PNG', 15, 8, 26, 26); 
+    logoBase64 = await getBase64ImageFromURL(LOGO_URL);
   } catch (error) {
     console.error("Gagal memuat Logo", error);
-    // Jika logo gagal, biarkan kosong, teks tetap dirender di bawah
   }
 
-  // B. Render Teks Kop (Selalu Tampil Sama)
-  const centerX = 112; // Titik tengah horizontal (sedikit offset karena ada logo di kiri)
+  // --- 2. FUNGSI UNTUK MENGGAMBAR HEADER/KOP SURAT ---
+  // Fungsi ini akan dipanggil untuk SETIAP halaman di akhir script
+  const printHeader = (doc: jsPDF) => {
+      const centerX = 112; 
 
-  doc.setTextColor(0, 0, 0); // Hitam
+      // Render Logo jika berhasil dimuat
+      if (logoBase64) {
+         doc.addImage(logoBase64, 'PNG', 15, 8, 26, 26); 
+      }
 
-  // Baris 1: PANITIA HARI BESAR ISLAM
-  doc.setFont("times", "bold");
-  doc.setFontSize(14); 
-  doc.text("PANITIA HARI BESAR ISLAM", centerX, 15, { align: 'center' });
-  
-  // Baris 2: MAULID NABI MUHAMMAD SAW
-  doc.setFontSize(14); 
-  doc.text("MAULID NABI MUHAMMAD SAW", centerX, 21, { align: 'center' });
-  
-  // Baris 3: DEWAN KEMAKMURAN MASJID...
-  doc.setFontSize(14);
-  doc.text("DEWAN KEMAKMURAN MASJID (DKM) JAMI' AL-ISHLAH", centerX, 27, { align: 'center' });
-  
-  // Baris 4: Alamat
-  doc.setFont("times", "normal");
-  doc.setFontSize(10);
-  doc.text("Jl. H.A Djuminta Kp. Teriti Rw. 04 Desa Karet Kec. Sepatan Kab. Tangerang", centerX, 33, { align: 'center' });
+      doc.setTextColor(0, 0, 0); // Hitam
 
-  // C. Garis Pembatas (Double Line)
-  doc.setLineWidth(0.5);
-  doc.line(10, 37, 200, 37); // Garis Tebal
-  
-  doc.setLineWidth(0.3); 
-  doc.line(10, 38, 200, 38); // Garis Tipis
-  
-  doc.setLineWidth(0.1); // Reset default width untuk tabel
-  
-  // --- END KOP LAPORAN ---
+      // Baris 1: PANITIA HARI BESAR ISLAM
+      doc.setFont("times", "bold");
+      doc.setFontSize(14); 
+      doc.text("PANITIA HARI BESAR ISLAM", centerX, 15, { align: 'center' });
+      
+      // Baris 2: MAULID NABI MUHAMMAD SAW
+      doc.setFontSize(14); 
+      doc.text("MAULID NABI MUHAMMAD SAW", centerX, 21, { align: 'center' });
+      
+      // Baris 3: DEWAN KEMAKMURAN MASJID...
+      doc.setFontSize(14);
+      doc.text("DEWAN KEMAKMURAN MASJID (DKM) JAMI' AL-ISHLAH", centerX, 27, { align: 'center' });
+      
+      // Baris 4: Alamat
+      doc.setFont("times", "normal");
+      doc.setFontSize(10);
+      doc.text("Jl. H.A Djuminta Kp. Teriti Rw. 04 Desa Karet Kec. Sepatan Kab. Tangerang", centerX, 33, { align: 'center' });
 
+      // C. Garis Pembatas (Double Line)
+      doc.setLineWidth(0.5);
+      doc.line(10, 37, 200, 37); // Garis Tebal
+      
+      doc.setLineWidth(0.3); 
+      doc.line(10, 38, 200, 38); // Garis Tipis
+      doc.setLineWidth(0.1); // Reset default width
+  };
 
-  // 2. Tentukan Posisi Awal Tabel
+  // --- 3. LOGIKA TABLE & ISI ---
   let startY = 46; 
 
   // --- CONFIG GAYA TABEL SUPER COMPACT (HEMAT KERTAS) ---
@@ -130,6 +130,9 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       halign: 'center'
   };
 
+  // REVISI PENTING: Margin Top diubah jadi 42 agar tidak menabrak Kop Surat di halaman berikutnya
+  const tableMargin = { top: 42, bottom: 20 };
+
   // Helper untuk menambah judul section dan cek halaman baru
   const addTitle = (title: string, isFirstSection = false, color: [number, number, number] = [0, 0, 0]) => {
     // Jika bukan section pertama, kita cek apakah perlu halaman baru atau space tambahan
@@ -141,7 +144,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         // Kertas F4 tinggi 330mm. 280mm menyisakan 50mm untuk footer & margin.
         if (startY > 280) {
             doc.addPage();
-            startY = 20; // Margin atas halaman baru
+            startY = 46; // Reset StartY jika pindah halaman (sesuai tinggi kop surat + gap)
         }
     }
 
@@ -171,11 +174,11 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
             theme: 'grid',
             styles: compactStyles,
             showHead: 'firstPage',
-            showFoot: 'lastPage', // REVISI: Footer TOTAL hanya di halaman terakhir
+            showFoot: 'lastPage',
             headStyles: { ...compactHeadStyles, fillColor: [88, 28, 135] }, 
             footStyles: { ...compactStyles, fillColor: [233, 213, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
             columnStyles: { 0: { halign: 'center', textColor: [0, 0, 0], cellWidth: 15 }, 2: { halign: 'right', textColor: [0, 0, 0]} },
-            margin: { top: 20, bottom: 20 }, // Margin halaman untuk auto page break
+            margin: tableMargin, // UPDATE MARGIN
             foot: [[
                 { content: '', colSpan: 1, styles: { textColor: [0, 0, 0] }},
                 { content: 'TOTAL', styles: { halign: 'right'} },
@@ -270,7 +273,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         theme: 'grid',
         styles: compactStyles,
         showHead: 'firstPage',
-        // Note: Tidak perlu showFoot disini karena TOTAL dimasukkan ke dalam BODY (baris terakhir).
+        margin: tableMargin, // UPDATE MARGIN
         headStyles: {
             ...compactHeadStyles,
             fillColor: [13, 148, 136], // Header Hijau Tosca
@@ -306,7 +309,6 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
   }
 
   // --- URUTAN 3: DONOR DATA (PEMASUKAN PROPOSAL / AMPLOP) ---
-  // REVISI: Dipindahkan ke SINI (Sebelum Pengeluaran)
   if (type === 'donor' || type === 'all_income' || type === 'all_financial') {
     addTitle('LAPORAN PEMASUKAN PROPOSAL / AMPLOP', type === 'donor');
 
@@ -324,8 +326,8 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       theme: 'grid',
       styles: compactStyles,
       showHead: 'firstPage',
-      showFoot: 'lastPage', // REVISI: Footer TOTAL hanya di halaman terakhir
-      margin: { top: 20, bottom: 20 },
+      showFoot: 'lastPage',
+      margin: tableMargin, // UPDATE MARGIN
       headStyles: { ...compactHeadStyles, fillColor: [30, 64, 175] }, 
       footStyles: { ...compactStyles, fillColor: [219, 234, 254], textColor: [0, 0, 0], fontStyle: 'bold' },
       // REVISI KOLOM: Tanggal fixed, Sumber Dana auto
@@ -344,7 +346,6 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
   }
 
   // --- URUTAN 4: EXPENSE DATA (PENGELUARAN) ---
-  // REVISI: Dipindahkan ke SINI (Setelah Proposal)
   if (type === 'expense' || type === 'all_financial') {
     addTitle('LAPORAN DANA PENGELUARAN', type === 'expense');
     
@@ -362,8 +363,8 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       theme: 'grid',
       styles: compactStyles,
       showHead: 'firstPage',
-      showFoot: 'lastPage', // REVISI: Footer TOTAL hanya di halaman terakhir
-      margin: { top: 20, bottom: 20 },
+      showFoot: 'lastPage',
+      margin: tableMargin, // UPDATE MARGIN
       headStyles: { ...compactHeadStyles, fillColor: [185, 28, 28] }, 
       footStyles: { ...compactStyles, fillColor: [254, 226, 226], textColor: [0, 0, 0], fontStyle: 'bold' },
       // REVISI KOLOM: Tanggal fixed, Keperluan auto
@@ -395,11 +396,9 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       let rekapY = lastTableY + 10; // Beri jarak sedikit dari tabel sebelumnya
       
       // REVISI PENTING: Ambang batas (Threshold) Page Break Diperketat
-      // Jika posisi Y > 250mm, kemungkinan besar tabel tidak muat di sisa kertas.
-      // Kita paksa pindah halaman agar Judul dan Tabel selalu bersama.
       if (rekapY > 250) {
           doc.addPage();
-          rekapY = 20; // Margin atas halaman baru
+          rekapY = 46; // Reset ke posisi aman dibawah Kop Surat
       }
 
       doc.setFontSize(10);
@@ -422,7 +421,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
           theme: 'grid',
           styles: compactStyles,
           showHead: 'firstPage',
-          margin: { top: 20, bottom: 20 },
+          margin: tableMargin, // UPDATE MARGIN
           pageBreak: 'avoid', 
           headStyles: { ...compactHeadStyles, fillColor: [255, 140, 0] }, 
           columnStyles: {
@@ -474,15 +473,19 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       }
   }
 
-  // Footer for all
+  // --- 4. GLOBAL LOOP: CETAK HEADER & FOOTER DI SEMUA HALAMAN ---
   const pageCount = doc.getNumberOfPages();
   for(let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    
+    // A. CETAK HEADER (KOP SURAT)
+    printHeader(doc);
+
+    // B. CETAK FOOTER
     doc.setFontSize(7);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(100);
     
-    // Footer: Menambahkan teks "Pukul :" antara tanggal dan jam
     const now = new Date();
     const dateStr = now.toLocaleDateString('id-ID');
     const timeStr = now.toLocaleTimeString('id-ID');

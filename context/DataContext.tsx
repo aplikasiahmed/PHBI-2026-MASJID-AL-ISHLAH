@@ -53,12 +53,22 @@ const initialData: AppData = {
 
 // --- PASSWORD ADMIN PUSAT (KUNCI UTAMA) ---
 const MASTER_ADMIN_PASSWORD = "ALISHLAH2026"; 
+const SESSION_KEY = 'phbi_admin_session'; // Key untuk localStorage
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [publishedData, setPublishedData] = useState<AppData>(initialData);
   const [stagedData, setStagedData] = useState<AppData>(initialData);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  
+  // LOGIKA BARU: Cek localStorage saat inisialisasi state
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    const session = localStorage.getItem(SESSION_KEY);
+    return !!session; // Return true jika session ada
+  });
+
+  const [currentUser, setCurrentUser] = useState<string | null>(() => {
+    const session = localStorage.getItem(SESSION_KEY);
+    return session ? JSON.parse(session).username : null;
+  });
 
   // --- FETCH DATA (SUPABASE ONLY) ---
   const fetchSupabaseData = async (notifyError = false) => {
@@ -169,6 +179,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = (username: string) => {
     setIsLoggedIn(true);
     setCurrentUser(username);
+    // LOGIKA BARU: Simpan Sesi
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ username }));
+    
     // Refresh data from Supabase upon login
     setTimeout(() => fetchSupabaseData(true), 500);
   };
@@ -176,6 +189,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
+    // LOGIKA BARU: Hapus Sesi
+    localStorage.removeItem(SESSION_KEY);
   };
 
   // --- AUTHENTICATION LOGIC (SUPABASE TABLE) ---

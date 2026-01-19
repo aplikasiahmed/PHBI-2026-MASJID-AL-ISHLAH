@@ -217,8 +217,8 @@ const PublicHome: React.FC = () => {
             
             {/* Control Group (Date Display & Dropdown) */}
             <div className="flex flex-col-reverse md:flex-row items-end md:items-center gap-2 w-full md:w-auto">
-               {/* Display Date based on Selection */}
-               <div className="flex items-center gap-1.5 bg-white border border-emerald-200 px-3 py-1.5 md:py-2 rounded-full shadow-sm">
+               {/* Display Date based on Selection - HIDDEN ON MOBILE */}
+               <div className="hidden md:flex items-center gap-1.5 bg-white border border-emerald-200 px-3 py-1.5 md:py-2 rounded-full shadow-sm">
                   <Calendar size={12} className="text-emerald-600 md:w-3.5 md:h-3.5" />
                   <span className="text-[10px] md:text-sm font-bold text-emerald-800 tracking-wide">{currentWeekDate}</span>
                </div>
@@ -397,7 +397,7 @@ const PublicHome: React.FC = () => {
           <div className="md:hidden bg-white border-b border-gray-200">
              {/* CONTAINER dengan SCROLLBAR TRANSPARAN / OPACITY */}
              <div className="overflow-y-auto overflow-x-hidden max-h-[300px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/60">
-                <table className="w-full text-[10px] text-left table-fixed relative border-collapse">
+                <table className="w-full text-[9px] text-left table-fixed relative border-collapse">
                     <thead className="bg-blue-50 text-blue-900 font-bold uppercase tracking-wider sticky top-0 z-20 shadow-sm">
                         <tr>
                             <th className="w-8 py-1.5 text-center border-b border-blue-100 border-r bg-blue-50">No</th>
@@ -431,7 +431,7 @@ const PublicHome: React.FC = () => {
                         <tfoot className="bg-blue-50 font-bold border-t border-blue-100 sticky bottom-0 z-20 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
                             <tr>
                                 <td colSpan={3} className="px-1 py-1.5 text-right text-blue-900 uppercase text-[9px] bg-blue-50">Total</td>
-                                <td className="px-1 py-1.5 text-right text-blue-900 text-[10px] bg-blue-50">{formatCurrency(totalDonors)}</td>
+                                <td className="px-1 py-1.5 text-right text-blue-900 text-[9px] bg-blue-50">{formatCurrency(totalDonors)}</td>
                             </tr>
                         </tfoot>
                     )}
@@ -495,7 +495,7 @@ const PublicHome: React.FC = () => {
           <div className="md:hidden bg-white border-b border-gray-200">
              {/* CONTAINER dengan SCROLLBAR TRANSPARAN / OPACITY */}
              <div className="overflow-y-auto overflow-x-hidden max-h-[300px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/60">
-                <table className="w-full text-[10px] text-left table-fixed relative border-collapse">
+                <table className="w-full text-[9px] text-left table-fixed relative border-collapse">
                     <thead className="bg-red-50 text-red-900 font-bold uppercase tracking-wider sticky top-0 z-20 shadow-sm">
                         <tr>
                             <th className="w-8 py-1.5 text-center border-b border-red-100 border-r bg-red-50">No</th>
@@ -529,7 +529,7 @@ const PublicHome: React.FC = () => {
                         <tfoot className="bg-red-50 font-bold border-t border-red-100 sticky bottom-0 z-20 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
                             <tr>
                                 <td colSpan={3} className="px-1 py-1.5 text-right text-red-900 uppercase text-[9px] bg-red-50">Total</td>
-                                <td className="px-1 py-1.5 text-right text-red-900 text-[10px] bg-red-50">{formatCurrency(totalExpense)}</td>
+                                <td className="px-1 py-1.5 text-right text-red-900 text-[9px] bg-red-50">{formatCurrency(totalExpense)}</td>
                             </tr>
                         </tfoot>
                     )}

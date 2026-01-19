@@ -354,7 +354,7 @@ const PublicHome: React.FC = () => {
           {/* DESKTOP TABLE VIEW (Reduced Font Size & Fixed Thinner Scrollbar) */}
           <div className="hidden md:block border-b border-gray-200">
             {/* CONTAINER dengan SCROLLBAR TRANSPARAN / OPACITY & HEIGHT UPDATED TO 350px (approx 10 rows) */}
-            <div className="overflow-y-auto overflow-x-hidden max-h-[350px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/60">
+            <div className="overflow-y-auto overflow-x-hidden max-h-[350px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/60">
               <table className="w-full text-[10px] relative border-collapse table-fixed">
                 <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider sticky top-0 z-20 shadow-sm">
                   <tr>
@@ -396,7 +396,7 @@ const PublicHome: React.FC = () => {
           {/* MOBILE TABLE VIEW (Compact & Sticky Header/Footer & Custom Scrollbar) */}
           <div className="md:hidden bg-white border-b border-gray-200">
              {/* CONTAINER dengan SCROLLBAR TRANSPARAN / OPACITY */}
-             <div className="overflow-y-auto overflow-x-hidden max-h-[300px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/60">
+             <div className="overflow-y-auto overflow-x-hidden max-h-[300px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400">
                 <table className="w-full text-[9px] text-left table-fixed relative border-collapse">
                     <thead className="bg-blue-50 text-blue-900 font-bold uppercase tracking-wider sticky top-0 z-20 shadow-sm">
                         <tr>
@@ -452,7 +452,7 @@ const PublicHome: React.FC = () => {
           {/* DESKTOP TABLE VIEW (Compact & Sticky & Custom Scrollbar) */}
           <div className="hidden md:block border-b border-gray-200">
              {/* CONTAINER dengan SCROLLBAR TRANSPARAN / OPACITY & HEIGHT UPDATED TO 350px (approx 10 rows) */}
-            <div className="overflow-y-auto overflow-x-hidden max-h-[350px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/60">
+            <div className="overflow-y-auto overflow-x-hidden max-h-[350px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400">
               <table className="w-full text-[10px] relative border-collapse table-fixed">
                 <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider sticky top-0 z-20 shadow-sm">
                   <tr>
@@ -494,7 +494,7 @@ const PublicHome: React.FC = () => {
           {/* MOBILE TABLE VIEW (Compact & Sticky & Custom Scrollbar) */}
           <div className="md:hidden bg-white border-b border-gray-200">
              {/* CONTAINER dengan SCROLLBAR TRANSPARAN / OPACITY */}
-             <div className="overflow-y-auto overflow-x-hidden max-h-[300px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/60">
+             <div className="overflow-y-auto overflow-x-hidden max-h-[300px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400">
                 <table className="w-full text-[9px] text-left table-fixed relative border-collapse">
                     <thead className="bg-red-50 text-red-900 font-bold uppercase tracking-wider sticky top-0 z-20 shadow-sm">
                         <tr>

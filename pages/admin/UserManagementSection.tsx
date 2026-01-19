@@ -129,7 +129,7 @@ const UserManagementSection: React.FC = () => {
                         />
                     </div>
                     <div>
-                        <label className={labelClass}>Ulangi Pass</label>
+                        <label className={labelClass}>Ulangi Password</label>
                         <input 
                             type="text" 
                             value={formData.confirmPassword}

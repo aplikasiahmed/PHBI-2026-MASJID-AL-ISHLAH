@@ -48,8 +48,8 @@ const Footer: React.FC = () => {
           {/* Hadith */}
            <div className="bg-emerald-800 p-3 md:p-4 rounded-lg shadow-inner text-[8px] md:text-sm text-gray-200 border border-emerald-700 flex flex-col justify-center items-center">
              <h4 className="text-center font-serif text-xs md:text-lg font-bold mb-2 text-gold">Rasulallah SAW Bersabda</h4>
-             <p className="text-center text-[7px] italic leading-relaxed">
-               "Jika anak Adam meninggal, terputuslah amalnya kecuali tiga perkara; sedekah jariyah, ilmu yang bermanfaat atau anak saleh yang mendoakan orang tuanya"
+             <p className="text-center text-[8px] italic leading-relaxed">
+               "Jika anak adam (manusia) meninggal, terputuslah amalnya kecuali tiga perkara; sedekah jariyah, ilmu yang bermanfaat atau anak saleh yang mendoakan orang tuanya"
              </p>
              <span className="font-semibold mt-2 block not-italic text-[8px] md:text-xs text-emerald-400">
                (HR. Muslim)

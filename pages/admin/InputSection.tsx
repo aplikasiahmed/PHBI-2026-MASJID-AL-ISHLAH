@@ -337,10 +337,10 @@ const InputSection: React.FC = () => {
       
       {/* Tabs (Grid Layout on Mobile to prevent scroll) */}
       <div className={`flex w-full gap-0.5 md:gap-1 ${editingId ? 'opacity-50 pointer-events-none' : ''}`}>
-        <button onClick={() => setActiveTab('previous')} className={tabClass('previous')}>Panitia</button>
+        <button onClick={() => setActiveTab('previous')} className={tabClass('previous')}>Saldo Awal</button>
         <button onClick={() => setActiveTab('weekly')} className={tabClass('weekly')}>Mingguan</button>
         <button onClick={() => setActiveTab('donor')} className={tabClass('donor')}>Donatur</button>
-        <button onClick={() => setActiveTab('expense')} className={tabClass('expense')}>Keluar</button>
+        <button onClick={() => setActiveTab('expense')} className={tabClass('expense')}>Pengeluaran</button>
       </div>
 
       <div className="bg-white p-2 md:p-6 rounded-b-lg shadow-md border border-gray-200">
@@ -442,7 +442,7 @@ const InputSection: React.FC = () => {
                 <div className="col-span-1 md:col-span-2 lg:col-span-1 flex items-end">
                     <div className="flex gap-2 w-full">
                         {editingId && (
-                            <button onClick={cancelEdit} className="w-1/3 bg-blue-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
+                            <button onClick={cancelEdit} className="w-1/3 bg-red-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
                         )}
                         <button onClick={handleSaveWeek} className="flex-1 bg-primary hover:bg-emerald-800 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-2">
                             {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN' : 'UPDATE DRAFT') : 'SIMPAN'}
@@ -532,7 +532,7 @@ const InputSection: React.FC = () => {
                  <div className="col-span-1 md:col-span-4 flex items-end">
                     <div className="flex gap-2 w-full">
                         {editingId && (
-                            <button onClick={cancelEdit} className="w-1/3 bg-blue-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
+                            <button onClick={cancelEdit} className="w-1/3 bg-red-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
                         )}
                         <button onClick={handleSaveDonor} className="flex-1 bg-primary hover:bg-emerald-800 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-2">
                             {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN' : 'UPDATE DRAFT') : 'SIMPAN'}
@@ -610,7 +610,7 @@ const InputSection: React.FC = () => {
                  <div className="col-span-1 md:col-span-4 flex items-end">
                     <div className="flex gap-2 w-full">
                         {editingId && (
-                            <button onClick={cancelEdit} className="w-1/3 bg-blue-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
+                            <button onClick={cancelEdit} className="w-1/3 bg-red-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
                         )}
                         <button onClick={handleSaveExp} className="flex-1 bg-primary hover:bg-emerald-800 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-2">
                             {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN' : 'UPDATE DRAFT') : 'SIMPAN'}

@@ -451,7 +451,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                 const cell = hookData.cell;
                 
                 const textDate = updateDateStr;
-                const textLabel = "SALDO SAAT INI";
+                const textLabel = " SISA SALDO SAAT INI";
 
                 // Measure
                 doc.setFont("helvetica", "italic"); doc.setFontSize(8);
@@ -782,7 +782,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                     const doc = hookData.doc;
                     const cell = hookData.cell;
                     const textDate = updateDateStr;
-                    const textLabel = "SALDO SAAT INI";
+                    const textLabel = "SISA SALDO SAAT INI";
 
                     // Measure
                     doc.setFont("helvetica", "italic"); doc.setFontSize(8);

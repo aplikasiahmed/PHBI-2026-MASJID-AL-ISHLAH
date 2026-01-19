@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../context/DataContext';
 import SummaryCard from '../components/SummaryCard';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/format';
-import { X, ChevronDown, Wallet, TrendingDown, TrendingUp, Copy, FileText } from 'lucide-react';
+import { X, ChevronDown, Wallet, TrendingDown, TrendingUp, Copy, FileText, Calendar } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { generatePDF } from '../utils/pdfGenerator';
 
@@ -18,7 +18,7 @@ const PublicHome: React.FC = () => {
   const bcaLogoUrl = "https://bmcenhkcwuxnclmlcriy.supabase.co/storage/v1/object/sign/image/BCA%20icon.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iODZjZjM2NS1mNTBmLTQwMmQtYjUwMC00Mjg3YjVlYTgxYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9CQ0EgaWNvbi5wbmciLCJpYXQiOjE3Njg1NDg3NjUsImV4cCI6MTgwMDA4NDc2NX0.D0kVRrFXun72PZeP3Uxvdk-uwC3IjiL5eH30JstwMrY";
   const waLogoUrl = "https://bmcenhkcwuxnclmlcriy.supabase.co/storage/v1/object/sign/image/WhatsApp_icon.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iODZjZjM2NS1mNTBmLTQwMmQtYjUwMC00Mjg3YjVlYTgxYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9XaGF0c0FwcF9pY29uLnBuZyIsImlhdCI6MTc2ODU0ODQ4NywiZXhwIjoxODAwMDg0NDg3fQ.7Jb2tyrgNr5wSEX1yz-ByWL3RMQqdlQk0-kqUlc1B6I";
 
-  // Calculations
+  // Calculations (Global Totals)
   const totalPrevious = publishedData.previousFunds.reduce((acc, curr) => acc + curr.nominal, 0);
   const totalWeekly = publishedData.weeklyData.reduce((acc, curr) => acc + curr.netAmount, 0);
   const totalDonors = publishedData.donors.reduce((acc, curr) => acc + curr.nominal, 0);
@@ -37,7 +37,6 @@ const PublicHome: React.FC = () => {
         const uniqueWeeks = Array.from(new Set(publishedData.weeklyData.map(d => d.week)));
         
         // Sortir Descending (Minggu ke-10, Minggu ke-9, ... Minggu ke-1)
-        // Menggunakan regex untuk mengambil angkanya saja agar urutannya benar secara numerik
         uniqueWeeks.sort((a: string, b: string) => {
             const numA = parseInt(a.replace(/\D/g, '') || '0');
             const numB = parseInt(b.replace(/\D/g, '') || '0');
@@ -45,22 +44,65 @@ const PublicHome: React.FC = () => {
         });
 
         if (uniqueWeeks.length > 0) {
-            setSelectedWeek(uniqueWeeks[0]); // Set ke minggu terakhir (terbesar)
-            hasSetInitialWeek.current = true; // Tandai flag agar tidak mereset pilihan user jika ada update background
+            setSelectedWeek(uniqueWeeks[0]); // Set ke minggu terakhir
+            hasSetInitialWeek.current = true;
         }
     }
   }, [publishedData.weeklyData]);
 
-  const filteredWeekly = selectedWeek === 'all' 
-    ? publishedData.weeklyData 
-    : publishedData.weeklyData.filter(d => d.week === selectedWeek);
+  // --- LOGIKA BARU UNTUK TABEL RT (AGREGASI / SUM) ---
+  const rtList = ['RT 01', 'RT 02', 'RT 03', 'RT 04', 'RT 05', 'RT 06'];
 
-  // Grouped Weekly Totals for display logic
-  const totalGrossWeek = filteredWeekly.reduce((acc, c) => acc + c.grossAmount, 0);
-  const totalConsWeek = filteredWeekly.reduce((acc, c) => acc + c.consumptionCut, 0);
-  const totalCommWeek = filteredWeekly.reduce((acc, c) => acc + c.commissionCut, 0);
-  const totalNetWeek = filteredWeekly.reduce((acc, c) => acc + c.netAmount, 0);
+  const processedWeeklyData = rtList.map(rtName => {
+    if (selectedWeek === 'all') {
+        // JIKA SEMUA MINGGU: JUMLAHKAN SELURUH DATA PER RT
+        const relevantItems = publishedData.weeklyData.filter(d => d.rt === rtName);
+        return {
+            id: `agg-${rtName}`,
+            week: 'Semua',
+            rt: rtName,
+            grossAmount: relevantItems.reduce((sum, item) => sum + item.grossAmount, 0),
+            consumptionCut: relevantItems.reduce((sum, item) => sum + item.consumptionCut, 0),
+            commissionCut: relevantItems.reduce((sum, item) => sum + item.commissionCut, 0),
+            netAmount: relevantItems.reduce((sum, item) => sum + item.netAmount, 0),
+            date: '' // Kosongkan tanggal untuk agregasi
+        };
+    } else {
+        // JIKA MINGGU TERTENTU: CARI DATA SPESIFIK
+        const item = publishedData.weeklyData.find(d => d.week === selectedWeek && d.rt === rtName);
+        return item || {
+            id: `empty-${selectedWeek}-${rtName}`,
+            week: selectedWeek,
+            rt: rtName,
+            grossAmount: 0,
+            consumptionCut: 0,
+            commissionCut: 0,
+            netAmount: 0,
+            date: ''
+        };
+    }
+  });
 
+  // LOGIKA TANGGAL HEADER (Ambil tanggal dari data minggu terpilih yang pertama ditemukan)
+  const currentWeekDate = selectedWeek === 'all' 
+    ? '--/--/----' 
+    : (publishedData.weeklyData.find(d => d.week === selectedWeek)?.date ? formatDate(publishedData.weeklyData.find(d => d.week === selectedWeek)!.date) : '-');
+
+  // Totals for display in footer (Calculated from processed data)
+  const totalGrossWeek = processedWeeklyData.reduce((acc, c) => acc + c.grossAmount, 0);
+  const totalConsWeek = processedWeeklyData.reduce((acc, c) => acc + c.consumptionCut, 0);
+  const totalCommWeek = processedWeeklyData.reduce((acc, c) => acc + c.commissionCut, 0);
+  const totalNetWeek = processedWeeklyData.reduce((acc, c) => acc + c.netAmount, 0);
+
+  // Helper: Format Date Short Numeric (DD/MM/YYYY) for Mobile
+  const formatDateShort = (dateString: string) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   const handleCopyRekening = () => {
     navigator.clipboard.writeText('7296012717');
@@ -150,7 +192,6 @@ const PublicHome: React.FC = () => {
                   <span className="font-bold text-emerald-600">{formatCurrency(totalWeekly)}</span>
                 </div>
                 
-                {/* REVERT: Hilangkan link detail, kembalikan ke teks biasa */}
                 <div className="flex justify-between border-b border-gray-100 pb-1.5 md:pb-2 items-center">
                   <span className="text-gray-600 font-medium">Proposal/Amplop</span>
                   <span className="font-bold text-blue-600">{formatCurrency(totalDonors)}</span>
@@ -167,84 +208,97 @@ const PublicHome: React.FC = () => {
 
         {/* Section: Mingguan (Per RT) */}
         <section className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          {/* REVISI: items-center menjadi items-start untuk mobile agar rata kiri */}
+          {/* HEADER SECTION: Judul & Filter & Tanggal */}
           <div className="p-3 md:p-6 bg-emerald-50 border-b border-emerald-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-3">
             <div className="flex items-center gap-2">
                 <div className="bg-emerald-600 p-1 md:p-1.5 rounded-lg text-white"><TrendingUp size={16} className="md:w-5 md:h-5" /></div>
                 <h3 className="text-sm md:text-xl font-serif font-bold text-primary">Pemasukan Mingguan (Per RT)</h3>
             </div>
-            <div className="relative w-full md:w-auto">
-              <select 
-                value={selectedWeek} 
-                onChange={(e) => setSelectedWeek(e.target.value)}
-                className="w-full md:w-56 appearance-none bg-white border border-emerald-200 text-gray-700 text-[8px] md:text-sm rounded-full pl-3 pr-8 py-1.5 md:py-2 focus:ring-1 focus:ring-primary focus:border-primary shadow-sm font-medium"
-              >
-                <option value="all">Tampilkan Semua Minggu</option>
-                {weeks.map(w => <option key={w} value={w}>{w}</option>)}
-              </select>
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-emerald-600">
-                <ChevronDown size={8} className="md:w-3.5 md:h-3.5" />
+            
+            {/* Control Group (Date Display & Dropdown) */}
+            <div className="flex flex-col-reverse md:flex-row items-end md:items-center gap-2 w-full md:w-auto">
+               {/* Display Date based on Selection */}
+               <div className="flex items-center gap-1.5 bg-white border border-emerald-200 px-3 py-1.5 md:py-2 rounded-full shadow-sm">
+                  <Calendar size={12} className="text-emerald-600 md:w-3.5 md:h-3.5" />
+                  <span className="text-[10px] md:text-sm font-bold text-emerald-800 tracking-wide">{currentWeekDate}</span>
+               </div>
+
+               <div className="relative w-full md:w-auto">
+                <select 
+                  value={selectedWeek} 
+                  onChange={(e) => setSelectedWeek(e.target.value)}
+                  className="w-full md:w-56 appearance-none bg-white border border-emerald-200 text-gray-700 text-[8px] md:text-sm rounded-full pl-3 pr-8 py-1.5 md:py-2 focus:ring-1 focus:ring-primary focus:border-primary shadow-sm font-medium"
+                >
+                  <option value="all">Tampilkan Semua Minggu</option>
+                  {weeks.map(w => <option key={w} value={w}>{w}</option>)}
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-emerald-600">
+                  <ChevronDown size={8} className="md:w-3.5 md:h-3.5" />
+                </div>
               </div>
             </div>
           </div>
           
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider text-xs">
-                <tr>
-                  <th className="px-6 py-4">Minggu / Tanggal</th>
-                  <th className="px-6 py-4">RT / Wilayah</th>
-                  <th className="px-6 py-4 text-right">Pemasukan Kotor</th>
-                  <th className="px-6 py-4 text-right text-red-500">Potongan 5%</th>
-                  <th className="px-6 py-4 text-right text-red-500">Potongan 10%</th>
-                  <th className="px-6 py-4 text-right text-emerald-700 bg-emerald-50/50">Pendapatan Bersih</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredWeekly.length === 0 ? (
-                  <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-400 italic">Belum ada data pemasukan mingguan</td></tr>
-                ) : (
-                  filteredWeekly.map((item) => (
-                    <tr key={item.id} className="hover:bg-emerald-50/30 transition duration-150">
-                      <td className="px-6 py-4">
-                        <span className="inline-block bg-gray-200 rounded px-2 py-0.5 text-[10px] font-bold text-gray-600 mb-1">{item.week}</span>
-                        <div className="text-gray-500 text-xs">{formatDate(item.date)}</div>
-                      </td>
-                      <td className="px-6 py-4 font-bold text-gray-700">{item.rt}</td>
-                      <td className="px-6 py-4 text-right text-gray-500">{formatCurrency(item.grossAmount)}</td>
-                      <td className="px-6 py-4 text-right text-red-400 text-xs">-{formatCurrency(item.consumptionCut)}</td>
-                      <td className="px-6 py-4 text-right text-red-400 text-xs">-{formatCurrency(item.commissionCut)}</td>
-                      <td className="px-6 py-4 text-right font-bold text-emerald-700 text-base bg-emerald-50/30">{formatCurrency(item.netAmount)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-              <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200 text-gray-700">
-                <tr>
-                  <td colSpan={2} className="px-6 py-4 text-right uppercase text-xs">Total Pendapatan Bersih</td>
-                  <td className="px-6 py-4 text-right text-gray-500">{formatCurrency(totalGrossWeek)}</td>
-                  <td className="px-6 py-4 text-right text-red-600 text-xs">-{formatCurrency(totalConsWeek)}</td>
-                  <td className="px-6 py-4 text-right text-red-600 text-xs">-{formatCurrency(totalCommWeek)}</td>
-                  <td className="px-6 py-4 text-right text-lg text-primary bg-emerald-100/50">{formatCurrency(totalNetWeek)}</td>
-                </tr>
-              </tfoot>
-            </table>
+          {/* Desktop Table View (REVISED ALIGNMENT: No/RT Center, Others Right) */}
+          <div className="hidden md:block border-b border-gray-200">
+            <div className="relative">
+              <table className="w-full text-[10px] relative border-collapse table-fixed">
+                <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider sticky top-0 z-20 shadow-sm">
+                  <tr>
+                    {/* Width Adjustment: Wide columns to prevent text wrap/cut */}
+                    <th className="w-12 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">No</th>
+                    <th className="w-20 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">RT</th>
+                    <th className="w-40 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">Pemasukan Kotor</th>
+                    <th className="w-32 px-3 py-2 text-center text-red-500 bg-gray-100 border-b border-gray-200">Potongan 5%</th>
+                    <th className="w-32 px-3 py-2 text-center text-red-500 bg-gray-100 border-b border-gray-200">Potongan 10%</th>
+                    <th className="w-48 px-3 py-2 text-center text-emerald-700 bg-emerald-50/50 border-b border-gray-200">Pendapatan Bersih</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                    {processedWeeklyData.map((item, idx) => (
+                      <tr key={item.id || idx} className="hover:bg-emerald-50/30 transition duration-150">
+                        {/* No Column (1-6) - Center */}
+                        <td className="px-3 py-2 text-center text-gray-500 font-mono">{idx + 1}</td>
+                        {/* RT Column (Clean, no Week text) - Center */}
+                        <td className="px-3 py-2 text-center font-bold text-gray-700">{item.rt}</td>
+                        {/* Nominal Columns (Wide) - RIGHT */}
+                        <td className="px-3 py-2 text-right text-gray-500">{formatCurrency(item.grossAmount)}</td>
+                        <td className="px-3 py-2 text-right text-red-400 text-[9px]">-{formatCurrency(item.consumptionCut)}</td>
+                        <td className="px-3 py-2 text-right text-red-400 text-[9px]">-{formatCurrency(item.commissionCut)}</td>
+                        <td className="px-3 py-2 text-right font-bold text-emerald-700 bg-emerald-50/30">{formatCurrency(item.netAmount)}</td>
+                      </tr>
+                    ))}
+                </tbody>
+                <tfoot className="bg-gray-50 font-bold border-t border-gray-200 text-gray-700">
+                  <tr>
+                    {/* Footer Cells - RIGHT */}
+                    <td colSpan={2} className="px-3 py-2 text-right uppercase text-[9px]">Total</td>
+                    <td className="px-3 py-2 text-right text-gray-500 text-[10px]">{formatCurrency(totalGrossWeek)}</td>
+                    <td className="px-3 py-2 text-right text-red-600 text-[9px]">-{formatCurrency(totalConsWeek)}</td>
+                    <td className="px-3 py-2 text-right text-red-600 text-[9px]">-{formatCurrency(totalCommWeek)}</td>
+                    <td className="px-3 py-2 text-right text-sm text-primary bg-emerald-100/50">{formatCurrency(totalNetWeek)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
 
-          {/* Mobile Card View (Optimized SUPER COMPACT for Small Screens) */}
+          {/* Mobile Card View (Aggregated Data logic used here too for consistency) */}
           <div className="md:hidden bg-gray-50 p-1.5 space-y-1.5">
-             {filteredWeekly.length === 0 ? (
-                <div className="text-center py-6 text-gray-400 bg-white rounded-lg border border-dashed border-gray-300 text-xs italic">Belum ada data untuk ditampilkan</div>
+             {processedWeeklyData.every(d => d.grossAmount === 0 && selectedWeek !== 'all') ? (
+                <div className="text-center py-6 text-gray-400 bg-white rounded-lg border border-dashed border-gray-300 text-xs italic">Belum ada data untuk minggu ini</div>
              ) : (
                 <>
-                {filteredWeekly.map((item) => (
+                {processedWeeklyData.map((item) => (
+                    (item.grossAmount > 0 || selectedWeek === 'all') && (
                     <div key={item.id} className="bg-white p-2 rounded-md shadow-sm border border-gray-200 relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-0.5 h-full bg-emerald-500"></div>
                         <div className="flex justify-between items-center mb-1 pb-1 border-b border-gray-100 pl-1.5">
                             <div>
-                                <span className="block font-bold text-gray-800 text-[8px] tracking-wide leading-none">{item.week}</span>
-                                <span className="text-[7px] text-gray-600 flex items-center gap-1 mt-0.5 leading-none">{formatDate(item.date)}</span>
+                                <span className="block font-bold text-gray-800 text-[8px] tracking-wide leading-none">{selectedWeek === 'all' ? 'Total Akumulasi' : item.week}</span>
+                                <span className="text-[7px] text-gray-600 flex items-center gap-1 mt-0.5 leading-none">
+                                    {selectedWeek === 'all' ? 'Semua Minggu' : formatDate(publishedData.weeklyData.find(d => d.week === selectedWeek)?.date || '')}
+                                </span>
                             </div>
                             <span className="bg-emerald-100 text-emerald-800 text-[8px] font-bold px-1.5 py-0.5 rounded-full">{item.rt}</span>
                         </div>
@@ -268,15 +322,16 @@ const PublicHome: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                    )
                 ))}
                 
-                {/* TOTAL BERSIH (Mobile Footer - Smaller) */}
+                {/* TOTAL BERSIH (Mobile Footer) */}
                 <div className="bg-gradient-to-r from-primary to-emerald-800 text-white p-2 rounded-lg shadow-lg mt-10 sticky bottom-4 z-10 border border-gold/30">
                     <div className="flex justify-between items-center mb-1.5">
                         <span className="font-bold text-[9px] uppercase tracking-wider opacity-90">
                            Total Pendapatan Bersih
                         </span>
-                        <span className="font-bold text-sm text-gold">{formatCurrency(totalNetWeek)}</span>
+                        <span className="font-bold text-yellow-300 text-sm text-gold">{formatCurrency(totalNetWeek)}</span>
                     </div>
                     <div className="text-[8px] text-emerald-200 text-right italic leading-none">
                         {selectedWeek === 'all' ? '*dari Semua Minggu' : `*dari ${selectedWeek}`}
@@ -287,7 +342,7 @@ const PublicHome: React.FC = () => {
           </div>
         </section>
 
-        {/* Section: Proposal / Amplop (RESTORED TO MAIN BODY with FIXED HEIGHT SCROLL) */}
+        {/* Section: Proposal / Amplop (FIXED: Compact & Small Scrollbar) */}
         <section className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="p-3 md:p-6 bg-blue-50 border-b border-blue-100">
              <div className="flex items-center gap-2">
@@ -296,84 +351,96 @@ const PublicHome: React.FC = () => {
             </div>
           </div>
           
-          {/* DESKTOP TABLE VIEW (SCROLLABLE HEIGHT) */}
-          <div className="hidden md:block overflow-y-auto max-h-[500px] relative">
-            <table className="w-full text-xs md:text-sm text-left relative">
-              <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
-                <tr>
-                  <th className="px-6 py-3 w-12 text-center bg-gray-100">No</th>
-                  <th className="px-6 py-3 bg-gray-100">Tanggal</th>
-                  <th className="px-6 py-3 bg-gray-100">Sumber Dana / Donatur</th>
-                  <th className="px-6 py-3 text-right bg-gray-100">Nominal</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {publishedData.donors.length === 0 ? (
-                  <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-400 italic">Belum ada data pemasukan proposal</td></tr>
-                ) : (
-                  publishedData.donors.map((item, idx) => (
-                    <tr key={item.id} className="hover:bg-blue-50/30 transition">
-                      <td className="px-6 py-3 text-center text-gray-500 font-mono">{idx + 1}</td>
-                      <td className="px-6 py-3 whitespace-nowrap text-gray-600">{formatDate(item.date)}</td>
-                      <td className="px-6 py-3 font-semibold text-gray-800">{item.name}</td>
-                      <td className="px-6 py-3 text-right font-bold text-blue-700 text-sm whitespace-nowrap bg-blue-50/30">{formatCurrency(item.nominal)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-              <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200 sticky bottom-0 z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.05)]">
-                <tr>
-                  <td colSpan={3} className="px-6 py-3 text-right uppercase text-sm text-gray-600 bg-gray-50">Total Pemasukan Lainnya</td>
-                  <td className="px-6 py-3 text-right text-xl text-blue-800 whitespace-nowrap bg-gray-50">{formatCurrency(totalDonors)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          {/* MOBILE TABLE VIEW (Fixed Layout & SCROLLABLE HEIGHT) */}
-          <div className="md:hidden bg-white overflow-y-auto max-h-[400px] relative">
-            <table className="w-full text-[10px] text-left table-fixed relative">
-                <thead className="bg-blue-50 text-blue-900 font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
-                    <tr>
-                        <th className="w-8 py-2 text-center border-b border-blue-100 border-r bg-blue-50">No</th>
-                        <th className="w-24 px-1 py-2 border-b border-blue-100 border-r text-center bg-blue-50">Tanggal</th>
-                        <th className="px-2 py-2 border-b border-blue-100 border-r text-center bg-blue-50">Sumber Dana</th>
-                        <th className="w-20 px-1 py-2 text-center border-b border-blue-100 bg-blue-50">Nominal</th>
-                    </tr>
+          {/* DESKTOP TABLE VIEW (Reduced Font Size & Fixed Thinner Scrollbar) */}
+          <div className="hidden md:block border-b border-gray-200">
+            {/* CONTAINER dengan SCROLLBAR TRANSPARAN / OPACITY & HEIGHT UPDATED TO 350px (approx 10 rows) */}
+            <div className="overflow-y-auto overflow-x-hidden max-h-[350px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/60">
+              <table className="w-full text-[10px] relative border-collapse table-fixed">
+                <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider sticky top-0 z-20 shadow-sm">
+                  <tr>
+                    {/* Compact Padding: px-3 py-2 - Fixed Widths */}
+                    <th className="w-12 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">No</th>
+                    <th className="w-32 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">Tanggal</th>
+                    <th className="px-3 py-2 text-center bg-gray-100 border-b border-gray-200">Sumber Dana / Donatur</th>
+                    {/* Width matched with Net Amount (w-48) */}
+                    <th className="w-48 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">Nominal</th>
+                  </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                    {publishedData.donors.length === 0 ? (
-                         <tr><td colSpan={4} className="py-4 text-center text-gray-400 italic">Belum ada data</td></tr>
-                    ) : (
-                        publishedData.donors.map((item, idx) => (
-                            <tr key={item.id} className="odd:bg-white even:bg-gray-50">
-                                <td className="py-2 text-center text-gray-500 font-mono align-top border-r border-gray-100">{idx + 1}</td>
-                                <td className="px-1 py-2 text-center text-gray-500 align-top border-r border-gray-100 leading-tight">
-                                    {formatDate(item.date)}
-                                </td>
-                                <td className="px-2 py-2 align-top border-r border-gray-100">
-                                    <div className="text-gray-800 break-words leading-tight">{item.name}</div>
-                                </td>
-                                <td className="px-1 py-2 text-right font-bold text-blue-700 align-top">
-                                    {formatCurrency(item.nominal)}
-                                </td>
-                            </tr>
-                        ))
-                    )}
+                  {publishedData.donors.length === 0 ? (
+                    <tr><td colSpan={4} className="px-3 py-6 text-center text-gray-400 italic">Belum ada data pemasukan proposal</td></tr>
+                  ) : (
+                    publishedData.donors.map((item, idx) => (
+                      <tr key={item.id} className="hover:bg-blue-50/30 transition">
+                        {/* Compact Padding Body - NO/DATE CENTER, NAME LEFT, NOMINAL RIGHT */}
+                        <td className="px-3 py-2 text-center text-gray-500 font-mono">{idx + 1}</td>
+                        <td className="px-3 py-2 text-center whitespace-nowrap text-gray-600">{formatDate(item.date)}</td>
+                        {/* UPDATE: Text Left & Removed Semibold/Bold */}
+                        <td className="px-3 py-2 text-left text-gray-800 truncate">{item.name}</td>
+                        <td className="px-3 py-2 text-right font-bold text-blue-700 whitespace-nowrap bg-blue-50/30">{formatCurrency(item.nominal)}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
-                {publishedData.donors.length > 0 && (
-                    <tfoot className="bg-blue-50 font-bold border-t-2 border-blue-100 sticky bottom-0 z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.05)]">
+                <tfoot className="bg-gray-50 font-bold border-t border-gray-200 sticky bottom-0 z-20 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
+                  <tr>
+                    {/* Compact Padding Footer & UPDATED TEXT - RIGHT */}
+                    <td colSpan={3} className="px-3 py-2 text-right uppercase text-[9px] text-gray-600 bg-gray-50">TOTAL PEMASUKAN PROPOSAL / AMPLOP</td>
+                    <td className="px-3 py-2 text-right text-sm text-blue-800 whitespace-nowrap bg-gray-50">{formatCurrency(totalDonors)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* MOBILE TABLE VIEW (Compact & Sticky Header/Footer & Custom Scrollbar) */}
+          <div className="md:hidden bg-white border-b border-gray-200">
+             {/* CONTAINER dengan SCROLLBAR TRANSPARAN / OPACITY */}
+             <div className="overflow-y-auto overflow-x-hidden max-h-[300px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/60">
+                <table className="w-full text-[10px] text-left table-fixed relative border-collapse">
+                    <thead className="bg-blue-50 text-blue-900 font-bold uppercase tracking-wider sticky top-0 z-20 shadow-sm">
                         <tr>
-                            <td colSpan={3} className="px-2 py-2 text-right text-blue-900 uppercase text-[9px] bg-blue-50">Total</td>
-                            <td className="px-1 py-2 text-right text-blue-900 text-[10px] bg-blue-50">{formatCurrency(totalDonors)}</td>
+                            <th className="w-8 py-1.5 text-center border-b border-blue-100 border-r bg-blue-50">No</th>
+                            <th className="w-20 px-1 py-1.5 border-b border-blue-100 border-r text-center bg-blue-50">Tanggal</th>
+                            <th className="px-1 py-1.5 border-b border-blue-100 border-r text-center bg-blue-50">Sumber Dana</th>
+                            <th className="w-20 px-1 py-1.5 text-center border-b border-blue-100 bg-blue-50">Nominal</th>
                         </tr>
-                    </tfoot>
-                )}
-            </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {publishedData.donors.length === 0 ? (
+                            <tr><td colSpan={4} className="py-4 text-center text-gray-400 italic">Belum ada data</td></tr>
+                        ) : (
+                            publishedData.donors.map((item, idx) => (
+                                <tr key={item.id} className="odd:bg-white even:bg-gray-50">
+                                    <td className="py-1.5 text-center text-gray-500 font-mono align-top border-r border-gray-100">{idx + 1}</td>
+                                    {/* USE formatDateShort for Mobile */}
+                                    <td className="px-1 py-1.5 text-center text-gray-500 align-top border-r border-gray-100 leading-tight">
+                                        {formatDateShort(item.date)}
+                                    </td>
+                                    <td className="px-1.5 py-1.5 align-top border-r border-gray-100">
+                                        <div className="text-gray-800 break-words leading-tight">{item.name}</div>
+                                    </td>
+                                    <td className="px-1 py-1.5 text-right font-bold text-blue-700 align-top">
+                                        {formatCurrency(item.nominal)}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                    {publishedData.donors.length > 0 && (
+                        <tfoot className="bg-blue-50 font-bold border-t border-blue-100 sticky bottom-0 z-20 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
+                            <tr>
+                                <td colSpan={3} className="px-1 py-1.5 text-right text-blue-900 uppercase text-[9px] bg-blue-50">Total</td>
+                                <td className="px-1 py-1.5 text-right text-blue-900 text-[10px] bg-blue-50">{formatCurrency(totalDonors)}</td>
+                            </tr>
+                        </tfoot>
+                    )}
+                </table>
+             </div>
           </div>
         </section>
 
-        {/* Section: Pengeluaran (FIXED HEIGHT SCROLL) */}
+        {/* Section: Pengeluaran (FIXED: Compact & Scroll Right) */}
         <section id="expense-section" className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="p-3 md:p-6 bg-red-50 border-b border-red-100">
              <div className="flex items-center gap-2">
@@ -382,84 +449,92 @@ const PublicHome: React.FC = () => {
             </div>
           </div>
           
-          {/* DESKTOP TABLE VIEW (SCROLLABLE HEIGHT) */}
-          <div className="hidden md:block overflow-y-auto max-h-[500px] relative">
-            <table className="w-full text-xs md:text-sm text-left relative">
-              <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
-                <tr>
-                  <th className="px-6 py-3 w-12 text-center bg-gray-100">No</th>
-                  <th className="px-6 py-3 bg-gray-100">Tanggal</th>
-                  <th className="px-6 py-3 bg-gray-100">Keperluan</th>
-                  <th className="px-6 py-3 text-right bg-gray-100">Nominal</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {publishedData.expenses.length === 0 ? (
-                  <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-400 italic">Belum ada data pengeluaran</td></tr>
-                ) : (
-                  publishedData.expenses.map((item, idx) => (
-                    <tr key={item.id} className="hover:bg-red-50/30 transition">
-                      <td className="px-6 py-3 text-center text-gray-500 font-mono">{idx + 1}</td>
-                      <td className="px-6 py-3 whitespace-nowrap text-gray-600">{formatDate(item.date)}</td>
-                      <td className="px-6 py-3 text-gray-800 font-medium">{item.purpose}</td>
-                      <td className="px-6 py-3 text-right font-bold text-red-600 text-sm whitespace-nowrap bg-red-50/30">{formatCurrency(item.nominal)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-              <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200 sticky bottom-0 z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.05)]">
-                <tr>
-                  <td colSpan={3} className="px-6 py-3 text-right uppercase text-sm text-gray-600 bg-gray-50">Total Pengeluaran</td>
-                  <td className="px-6 py-3 text-right text-xl text-red-800 whitespace-nowrap bg-gray-50">{formatCurrency(totalExpense)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          {/* MOBILE TABLE VIEW (Fixed Layout & SCROLLABLE HEIGHT) */}
-          <div className="md:hidden bg-white overflow-y-auto max-h-[400px] relative">
-            <table className="w-full text-[10px] text-left table-fixed relative">
-                <thead className="bg-red-50 text-red-900 font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
-                    <tr>
-                        <th className="w-8 py-2 text-center border-b border-red-100 border-r bg-red-50">No</th>
-                        {/* UPDATE: Tanggal diperlebar (w-24) dan judul Header rata tengah */}
-                        <th className="w-24 px-1 py-2 border-b border-red-100 border-r text-center bg-red-50">Tanggal</th>
-                        {/* UPDATE: Judul Rata Tengah, Auto Width */}
-                        <th className="px-2 py-2 border-b border-red-100 border-r text-center bg-red-50">Keperluan</th>
-                        {/* Judul Rata Tengah */}
-                        <th className="w-20 px-1 py-2 text-center border-b border-red-100 bg-red-50">Nominal</th>
-                    </tr>
+          {/* DESKTOP TABLE VIEW (Compact & Sticky & Custom Scrollbar) */}
+          <div className="hidden md:block border-b border-gray-200">
+             {/* CONTAINER dengan SCROLLBAR TRANSPARAN / OPACITY & HEIGHT UPDATED TO 350px (approx 10 rows) */}
+            <div className="overflow-y-auto overflow-x-hidden max-h-[350px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/60">
+              <table className="w-full text-[10px] relative border-collapse table-fixed">
+                <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider sticky top-0 z-20 shadow-sm">
+                  <tr>
+                    {/* Compact Padding - Fixed Widths */}
+                    <th className="w-12 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">No</th>
+                    <th className="w-32 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">Tanggal</th>
+                    <th className="px-3 py-2 text-center bg-gray-100 border-b border-gray-200">Keperluan</th>
+                    {/* Width matched with Net Amount (w-48) */}
+                    <th className="w-48 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">Nominal</th>
+                  </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                    {publishedData.expenses.length === 0 ? (
-                         <tr><td colSpan={4} className="py-4 text-center text-gray-400 italic">Belum ada data</td></tr>
-                    ) : (
-                        publishedData.expenses.map((item, idx) => (
-                            <tr key={item.id} className="odd:bg-white even:bg-gray-50">
-                                <td className="py-2 text-center text-gray-500 font-mono align-top border-r border-gray-100">{idx + 1}</td>
-                                <td className="px-1 py-2 text-center text-gray-500 align-top border-r border-gray-100 leading-tight">
-                                    {formatDate(item.date)}
-                                </td>
-                                <td className="px-2 py-2 align-top border-r border-gray-100">
-                                    {/* FONT NORMAL (REMOVED FONT-BOLD) */}
-                                    <div className="text-gray-800 break-words leading-tight">{item.purpose}</div>
-                                </td>
-                                <td className="px-1 py-2 text-right font-bold text-red-600 align-top">
-                                    {formatCurrency(item.nominal)}
-                                </td>
-                            </tr>
-                        ))
-                    )}
+                  {publishedData.expenses.length === 0 ? (
+                    <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400 italic">Belum ada data pengeluaran</td></tr>
+                  ) : (
+                    publishedData.expenses.map((item, idx) => (
+                      <tr key={item.id} className="hover:bg-red-50/30 transition">
+                        {/* Compact Padding Body - NO/DATE CENTER, PURPOSE LEFT, NOMINAL RIGHT */}
+                        <td className="px-3 py-2 text-center text-gray-500 font-mono">{idx + 1}</td>
+                        <td className="px-3 py-2 text-center whitespace-nowrap text-gray-600">{formatDate(item.date)}</td>
+                        {/* UPDATE: Text Left */}
+                        <td className="px-3 py-2 text-left text-gray-800 font-medium truncate">{item.purpose}</td>
+                        <td className="px-3 py-2 text-right font-bold text-red-600 text-[10px] whitespace-nowrap bg-red-50/30">{formatCurrency(item.nominal)}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
-                {publishedData.expenses.length > 0 && (
-                    <tfoot className="bg-red-50 font-bold border-t-2 border-red-100 sticky bottom-0 z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.05)]">
+                <tfoot className="bg-gray-50 font-bold border-t border-gray-200 sticky bottom-0 z-20 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
+                  <tr>
+                    {/* Compact Padding Footer - RIGHT */}
+                    <td colSpan={3} className="px-3 py-2 text-right uppercase text-[9px] text-gray-600 bg-gray-50">Total Pengeluaran</td>
+                    <td className="px-3 py-2 text-right text-sm text-red-800 whitespace-nowrap bg-gray-50">{formatCurrency(totalExpense)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* MOBILE TABLE VIEW (Compact & Sticky & Custom Scrollbar) */}
+          <div className="md:hidden bg-white border-b border-gray-200">
+             {/* CONTAINER dengan SCROLLBAR TRANSPARAN / OPACITY */}
+             <div className="overflow-y-auto overflow-x-hidden max-h-[300px] relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/60">
+                <table className="w-full text-[10px] text-left table-fixed relative border-collapse">
+                    <thead className="bg-red-50 text-red-900 font-bold uppercase tracking-wider sticky top-0 z-20 shadow-sm">
                         <tr>
-                            <td colSpan={3} className="px-2 py-2 text-right text-red-900 uppercase text-[9px] bg-red-50">Total</td>
-                            <td className="px-1 py-2 text-right text-red-900 text-[10px] bg-red-50">{formatCurrency(totalExpense)}</td>
+                            <th className="w-8 py-1.5 text-center border-b border-red-100 border-r bg-red-50">No</th>
+                            <th className="w-20 px-1 py-1.5 border-b border-red-100 border-r text-center bg-red-50">Tanggal</th>
+                            <th className="px-1 py-1.5 border-b border-red-100 border-r text-center bg-red-50">Keperluan</th>
+                            <th className="w-20 px-1 py-1.5 text-center border-b border-red-100 bg-red-50">Nominal</th>
                         </tr>
-                    </tfoot>
-                )}
-            </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {publishedData.expenses.length === 0 ? (
+                            <tr><td colSpan={4} className="py-4 text-center text-gray-400 italic">Belum ada data</td></tr>
+                        ) : (
+                            publishedData.expenses.map((item, idx) => (
+                                <tr key={item.id} className="odd:bg-white even:bg-gray-50">
+                                    <td className="py-1.5 text-center text-gray-500 font-mono align-top border-r border-gray-100">{idx + 1}</td>
+                                    {/* USE formatDateShort for Mobile */}
+                                    <td className="px-1 py-1.5 text-center text-gray-500 align-top border-r border-gray-100 leading-tight">
+                                        {formatDateShort(item.date)}
+                                    </td>
+                                    <td className="px-1.5 py-1.5 align-top border-r border-gray-100">
+                                        <div className="text-gray-800 break-words leading-tight">{item.purpose}</div>
+                                    </td>
+                                    <td className="px-1 py-1.5 text-right font-bold text-red-600 align-top">
+                                        {formatCurrency(item.nominal)}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                    {publishedData.expenses.length > 0 && (
+                        <tfoot className="bg-red-50 font-bold border-t border-red-100 sticky bottom-0 z-20 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
+                            <tr>
+                                <td colSpan={3} className="px-1 py-1.5 text-right text-red-900 uppercase text-[9px] bg-red-50">Total</td>
+                                <td className="px-1 py-1.5 text-right text-red-900 text-[10px] bg-red-50">{formatCurrency(totalExpense)}</td>
+                            </tr>
+                        </tfoot>
+                    )}
+                </table>
+             </div>
           </div>
         </section>
 

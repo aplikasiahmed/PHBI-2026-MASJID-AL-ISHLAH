@@ -128,12 +128,11 @@ const PublicHome: React.FC = () => {
                 title="Saldo Saat Ini" 
                 amount={balance} 
                 type="balance"
-                // UPDATE: Menggunakan formatDateTime untuk menampilkan Jam
                 subtitle={`Update: ${formatDateTime(publishedData.lastUpdated)}`}
             />
         </div>
 
-        {/* Detail Popup for Income (Compact Mobile Version) */}
+        {/* 1. Detail Popup for Income */}
         {activeDetail === 'income' && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm md:max-w-md overflow-hidden animate-fade-in-up">
@@ -150,10 +149,13 @@ const PublicHome: React.FC = () => {
                   <span className="text-gray-600 font-medium">Total Bersih Mingguan (Per RT)</span>
                   <span className="font-bold text-emerald-600">{formatCurrency(totalWeekly)}</span>
                 </div>
-                <div className="flex justify-between border-b border-gray-100 pb-1.5 md:pb-2">
+                
+                {/* REVERT: Hilangkan link detail, kembalikan ke teks biasa */}
+                <div className="flex justify-between border-b border-gray-100 pb-1.5 md:pb-2 items-center">
                   <span className="text-gray-600 font-medium">Proposal/Amplop</span>
                   <span className="font-bold text-blue-600">{formatCurrency(totalDonors)}</span>
                 </div>
+
                 <div className="flex justify-between pt-1.5 mt-1 text-sm md:text-lg font-bold text-primary bg-emerald-50 p-2 md:p-3 rounded-lg">
                   <span>TOTAL PEMASUKAN</span>
                   <span>{formatCurrency(totalIncome)}</span>
@@ -285,24 +287,24 @@ const PublicHome: React.FC = () => {
           </div>
         </section>
 
-        {/* Section: Proposal / Amplop */}
+        {/* Section: Proposal / Amplop (RESTORED TO MAIN BODY with FIXED HEIGHT SCROLL) */}
         <section className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="p-3 md:p-6 bg-blue-50 border-b border-blue-100">
-            <div className="flex items-center gap-2">
+             <div className="flex items-center gap-2">
                 <div className="bg-blue-600 p-1 md:p-1.5 rounded-lg text-white"><Wallet size={16} className="md:w-5 md:h-5" /></div>
                 <h3 className="text-sm md:text-xl font-serif font-bold text-blue-900">Pemasukan Proposal / Amplop</h3>
             </div>
           </div>
           
-          {/* DESKTOP TABLE VIEW */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-xs md:text-sm text-left">
-              <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider">
+          {/* DESKTOP TABLE VIEW (SCROLLABLE HEIGHT) */}
+          <div className="hidden md:block overflow-y-auto max-h-[500px] relative">
+            <table className="w-full text-xs md:text-sm text-left relative">
+              <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
                 <tr>
-                  <th className="px-6 py-3 w-12 text-center">No</th>
-                  <th className="px-6 py-3">Tanggal</th>
-                  <th className="px-6 py-3">Sumber Dana</th>
-                  <th className="px-6 py-3 text-right">Nominal</th>
+                  <th className="px-6 py-3 w-12 text-center bg-gray-100">No</th>
+                  <th className="px-6 py-3 bg-gray-100">Tanggal</th>
+                  <th className="px-6 py-3 bg-gray-100">Sumber Dana / Donatur</th>
+                  <th className="px-6 py-3 text-right bg-gray-100">Nominal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -319,27 +321,24 @@ const PublicHome: React.FC = () => {
                   ))
                 )}
               </tbody>
-              <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200">
+              <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200 sticky bottom-0 z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.05)]">
                 <tr>
-                  <td colSpan={3} className="px-6 py-3 text-right uppercase text-sm text-gray-600">Total Pemasukan Lainnya</td>
-                  <td className="px-6 py-3 text-right text-xl text-blue-800 whitespace-nowrap">{formatCurrency(totalDonors)}</td>
+                  <td colSpan={3} className="px-6 py-3 text-right uppercase text-sm text-gray-600 bg-gray-50">Total Pemasukan Lainnya</td>
+                  <td className="px-6 py-3 text-right text-xl text-blue-800 whitespace-nowrap bg-gray-50">{formatCurrency(totalDonors)}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
 
-          {/* MOBILE TABLE VIEW (Fixed Layout & Non-Scrollable) */}
-          <div className="md:hidden bg-white">
-            <table className="w-full text-[10px] text-left table-fixed">
-                <thead className="bg-blue-50 text-blue-900 font-bold uppercase tracking-wider">
+          {/* MOBILE TABLE VIEW (Fixed Layout & SCROLLABLE HEIGHT) */}
+          <div className="md:hidden bg-white overflow-y-auto max-h-[400px] relative">
+            <table className="w-full text-[10px] text-left table-fixed relative">
+                <thead className="bg-blue-50 text-blue-900 font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
                     <tr>
-                        <th className="w-8 py-2 text-center border-b border-blue-100 border-r">No</th>
-                        {/* UPDATE: Tanggal diperlebar (w-24) dan judul Header rata tengah */}
-                        <th className="w-24 px-1 py-2 border-b border-blue-100 border-r text-center">Tanggal</th>
-                        {/* UPDATE: Judul Rata Tengah, Auto Width */}
-                        <th className="px-2 py-2 border-b border-blue-100 border-r text-center">Sumber Dana</th>
-                        {/* Judul Rata Tengah */}
-                        <th className="w-20 px-1 py-2 text-center border-b border-blue-100">Nominal</th>
+                        <th className="w-8 py-2 text-center border-b border-blue-100 border-r bg-blue-50">No</th>
+                        <th className="w-24 px-1 py-2 border-b border-blue-100 border-r text-center bg-blue-50">Tanggal</th>
+                        <th className="px-2 py-2 border-b border-blue-100 border-r text-center bg-blue-50">Sumber Dana</th>
+                        <th className="w-20 px-1 py-2 text-center border-b border-blue-100 bg-blue-50">Nominal</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -353,7 +352,6 @@ const PublicHome: React.FC = () => {
                                     {formatDate(item.date)}
                                 </td>
                                 <td className="px-2 py-2 align-top border-r border-gray-100">
-                                    {/* FONT NORMAL (REMOVED FONT-BOLD) */}
                                     <div className="text-gray-800 break-words leading-tight">{item.name}</div>
                                 </td>
                                 <td className="px-1 py-2 text-right font-bold text-blue-700 align-top">
@@ -364,10 +362,10 @@ const PublicHome: React.FC = () => {
                     )}
                 </tbody>
                 {publishedData.donors.length > 0 && (
-                    <tfoot className="bg-blue-50 font-bold border-t-2 border-blue-100">
+                    <tfoot className="bg-blue-50 font-bold border-t-2 border-blue-100 sticky bottom-0 z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.05)]">
                         <tr>
-                            <td colSpan={3} className="px-2 py-2 text-right text-blue-900 uppercase text-[9px]">Total</td>
-                            <td className="px-1 py-2 text-right text-blue-900 text-[10px]">{formatCurrency(totalDonors)}</td>
+                            <td colSpan={3} className="px-2 py-2 text-right text-blue-900 uppercase text-[9px] bg-blue-50">Total</td>
+                            <td className="px-1 py-2 text-right text-blue-900 text-[10px] bg-blue-50">{formatCurrency(totalDonors)}</td>
                         </tr>
                     </tfoot>
                 )}
@@ -375,7 +373,7 @@ const PublicHome: React.FC = () => {
           </div>
         </section>
 
-        {/* Section: Pengeluaran */}
+        {/* Section: Pengeluaran (FIXED HEIGHT SCROLL) */}
         <section id="expense-section" className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="p-3 md:p-6 bg-red-50 border-b border-red-100">
              <div className="flex items-center gap-2">
@@ -384,15 +382,15 @@ const PublicHome: React.FC = () => {
             </div>
           </div>
           
-          {/* DESKTOP TABLE VIEW */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-xs md:text-sm text-left">
-              <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider">
+          {/* DESKTOP TABLE VIEW (SCROLLABLE HEIGHT) */}
+          <div className="hidden md:block overflow-y-auto max-h-[500px] relative">
+            <table className="w-full text-xs md:text-sm text-left relative">
+              <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
                 <tr>
-                  <th className="px-6 py-3 w-12 text-center">No</th>
-                  <th className="px-6 py-3">Tanggal</th>
-                  <th className="px-6 py-3">Keperluan</th>
-                  <th className="px-6 py-3 text-right">Nominal</th>
+                  <th className="px-6 py-3 w-12 text-center bg-gray-100">No</th>
+                  <th className="px-6 py-3 bg-gray-100">Tanggal</th>
+                  <th className="px-6 py-3 bg-gray-100">Keperluan</th>
+                  <th className="px-6 py-3 text-right bg-gray-100">Nominal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -409,27 +407,27 @@ const PublicHome: React.FC = () => {
                   ))
                 )}
               </tbody>
-              <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200">
+              <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200 sticky bottom-0 z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.05)]">
                 <tr>
-                  <td colSpan={3} className="px-6 py-3 text-right uppercase text-sm text-gray-600">Total Pengeluaran</td>
-                  <td className="px-6 py-3 text-right text-xl text-red-800 whitespace-nowrap">{formatCurrency(totalExpense)}</td>
+                  <td colSpan={3} className="px-6 py-3 text-right uppercase text-sm text-gray-600 bg-gray-50">Total Pengeluaran</td>
+                  <td className="px-6 py-3 text-right text-xl text-red-800 whitespace-nowrap bg-gray-50">{formatCurrency(totalExpense)}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
 
-          {/* MOBILE TABLE VIEW (Fixed Layout & Non-Scrollable) */}
-          <div className="md:hidden bg-white">
-            <table className="w-full text-[10px] text-left table-fixed">
-                <thead className="bg-red-50 text-red-900 font-bold uppercase tracking-wider">
+          {/* MOBILE TABLE VIEW (Fixed Layout & SCROLLABLE HEIGHT) */}
+          <div className="md:hidden bg-white overflow-y-auto max-h-[400px] relative">
+            <table className="w-full text-[10px] text-left table-fixed relative">
+                <thead className="bg-red-50 text-red-900 font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
                     <tr>
-                        <th className="w-8 py-2 text-center border-b border-red-100 border-r">No</th>
+                        <th className="w-8 py-2 text-center border-b border-red-100 border-r bg-red-50">No</th>
                         {/* UPDATE: Tanggal diperlebar (w-24) dan judul Header rata tengah */}
-                        <th className="w-24 px-1 py-2 border-b border-red-100 border-r text-center">Tanggal</th>
+                        <th className="w-24 px-1 py-2 border-b border-red-100 border-r text-center bg-red-50">Tanggal</th>
                         {/* UPDATE: Judul Rata Tengah, Auto Width */}
-                        <th className="px-2 py-2 border-b border-red-100 border-r text-center">Keperluan</th>
+                        <th className="px-2 py-2 border-b border-red-100 border-r text-center bg-red-50">Keperluan</th>
                         {/* Judul Rata Tengah */}
-                        <th className="w-20 px-1 py-2 text-center border-b border-red-100">Nominal</th>
+                        <th className="w-20 px-1 py-2 text-center border-b border-red-100 bg-red-50">Nominal</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -454,10 +452,10 @@ const PublicHome: React.FC = () => {
                     )}
                 </tbody>
                 {publishedData.expenses.length > 0 && (
-                    <tfoot className="bg-red-50 font-bold border-t-2 border-red-100">
+                    <tfoot className="bg-red-50 font-bold border-t-2 border-red-100 sticky bottom-0 z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.05)]">
                         <tr>
-                            <td colSpan={3} className="px-2 py-2 text-right text-red-900 uppercase text-[9px]">Total</td>
-                            <td className="px-1 py-2 text-right text-red-900 text-[10px]">{formatCurrency(totalExpense)}</td>
+                            <td colSpan={3} className="px-2 py-2 text-right text-red-900 uppercase text-[9px] bg-red-50">Total</td>
+                            <td className="px-1 py-2 text-right text-red-900 text-[10px] bg-red-50">{formatCurrency(totalExpense)}</td>
                         </tr>
                     </tfoot>
                 )}

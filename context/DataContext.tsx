@@ -74,7 +74,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // --- FETCH DATA (SUPABASE ONLY) ---
   const fetchSupabaseData = async (notifyError = false) => {
     // TAMPILKAN LOADING SCREEN SAAT MUAT ULANG HALAMAN (Initial Load)
-    // REVISI: Hanya tampilkan jika TIDAK sedang login (Halaman Publik)
     if (!notifyError && !isLoggedIn) {
         Swal.fire({
             title: 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
@@ -94,7 +93,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       const mappedPrev = prevFunds?.map((item: any) => ({
           ...item,
-          createdBy: item.created_by // Map from DB
+          createdBy: item.created_by, // Siapa yang input
+          editedBy: item.edited_by    // Siapa yang edit terakhir
       })) || [];
 
       // b. Fetch Weekly Data (Mingguan_data)
@@ -110,7 +110,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         consumptionCut: item.consumption_cut,
         commissionCut: item.commission_cut,
         netAmount: item.net_amount,
-        createdBy: item.created_by // Map from DB
+        createdBy: item.created_by, // Siapa yang input
+        editedBy: item.edited_by    // Siapa yang edit terakhir
       })) || [];
 
       // c. Fetch Donors (Donatur_data)
@@ -119,7 +120,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       const mappedDonors = donors?.map((item: any) => ({
         ...item,
-        createdBy: item.created_by // Map from DB
+        createdBy: item.created_by, // Siapa yang input
+        editedBy: item.edited_by    // Siapa yang edit terakhir
       })) || [];
 
       // d. Fetch Expenses (Pengeluaran_data)
@@ -128,7 +130,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const mappedExpenses = expenses?.map((item: any) => ({
         ...item,
-        createdBy: item.created_by // Map from DB
+        createdBy: item.created_by, // Siapa yang input
+        editedBy: item.edited_by    // Siapa yang edit terakhir
       })) || [];
 
       // e. Fetch Meta (Tetap app_meta)
@@ -158,7 +161,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             footer: error.message
           });
       } else {
-         // Jika initial load gagal, tetap tutup loading spinner tapi beri info kecil atau biarkan error handling lain
          Swal.close();
       }
     }
@@ -340,16 +342,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newItem = { 
         ...item, 
         id: crypto.randomUUID(),
-        createdBy: currentUser || 'Admin' 
+        // REVISI: Saat Buat Baru -> createdBy dan editedBy sama
+        createdBy: currentUser || 'Admin', 
+        editedBy: currentUser || 'Admin' 
     };
     setStagedData(prev => ({ ...prev, previousFunds: [...prev.previousFunds, newItem] }));
   };
+  
+  // REVISI: Update editedBy saat EDIT draft (createdBy JANGAN DIUBAH)
   const updatePreviousFund = (id: string, data: Partial<PreviousFund>) => {
     setStagedData(prev => ({
         ...prev,
-        previousFunds: prev.previousFunds.map(item => item.id === id ? { ...item, ...data } : item)
+        previousFunds: prev.previousFunds.map(item => 
+          item.id === id ? { ...item, ...data, editedBy: currentUser || 'Admin' } : item
+        )
     }));
   };
+  
   const deletePreviousFund = (id: string) => {
     setStagedData(prev => ({ ...prev, previousFunds: prev.previousFunds.filter(i => i.id !== id) }));
   };
@@ -359,16 +368,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newItem = { 
         ...item, 
         id: crypto.randomUUID(),
-        createdBy: currentUser || 'Admin'
+        // REVISI: Saat Buat Baru -> createdBy dan editedBy sama
+        createdBy: currentUser || 'Admin',
+        editedBy: currentUser || 'Admin'
     };
     setStagedData(prev => ({ ...prev, weeklyData: [...prev.weeklyData, newItem] }));
   };
+  
+  // REVISI: Update editedBy saat EDIT draft
   const updateWeeklyData = (id: string, data: Partial<WeeklyData>) => {
     setStagedData(prev => ({
         ...prev,
-        weeklyData: prev.weeklyData.map(item => item.id === id ? { ...item, ...data } : item)
+        weeklyData: prev.weeklyData.map(item => 
+          item.id === id ? { ...item, ...data, editedBy: currentUser || 'Admin' } : item
+        )
     }));
   };
+  
   const deleteWeeklyData = (id: string) => {
     setStagedData(prev => ({ ...prev, weeklyData: prev.weeklyData.filter(i => i.id !== id) }));
   };
@@ -378,16 +394,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newItem = { 
         ...item, 
         id: crypto.randomUUID(),
-        createdBy: currentUser || 'Admin'
+        // REVISI: Saat Buat Baru -> createdBy dan editedBy sama
+        createdBy: currentUser || 'Admin',
+        editedBy: currentUser || 'Admin'
     };
     setStagedData(prev => ({ ...prev, donors: [...prev.donors, newItem] }));
   };
+  
+  // REVISI: Update editedBy saat EDIT draft
   const updateDonor = (id: string, data: Partial<DonorData>) => {
     setStagedData(prev => ({
         ...prev,
-        donors: prev.donors.map(item => item.id === id ? { ...item, ...data } : item)
+        donors: prev.donors.map(item => 
+          item.id === id ? { ...item, ...data, editedBy: currentUser || 'Admin' } : item
+        )
     }));
   };
+  
   const deleteDonor = (id: string) => {
     setStagedData(prev => ({ ...prev, donors: prev.donors.filter(i => i.id !== id) }));
   };
@@ -397,16 +420,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newItem = { 
         ...item, 
         id: crypto.randomUUID(),
-        createdBy: currentUser || 'Admin'
+        // REVISI: Saat Buat Baru -> createdBy dan editedBy sama
+        createdBy: currentUser || 'Admin',
+        editedBy: currentUser || 'Admin'
     };
     setStagedData(prev => ({ ...prev, expenses: [...prev.expenses, newItem] }));
   };
+  
+  // REVISI: Update editedBy saat EDIT draft
   const updateExpense = (id: string, data: Partial<ExpenseData>) => {
     setStagedData(prev => ({
         ...prev,
-        expenses: prev.expenses.map(item => item.id === id ? { ...item, ...data } : item)
+        expenses: prev.expenses.map(item => 
+          item.id === id ? { ...item, ...data, editedBy: currentUser || 'Admin' } : item
+        )
     }));
   };
+  
   const deleteExpense = (id: string) => {
     setStagedData(prev => ({ ...prev, expenses: prev.expenses.filter(i => i.id !== id) }));
   };
@@ -414,7 +444,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // --- DIRECT DATABASE ACTIONS (UPDATE / DELETE PUBLISHED DATA) ---
   const updatePublishedItem = async (table: string, id: string, data: any): Promise<boolean> => {
       try {
-          const { error } = await supabase.from(table).update(data).eq('id', id);
+          // REVISI PENTING: Inject 'edited_by' ke database agar tahu siapa yang edit
+          // Kita TIDAK menyertakan created_by disini agar created_by asli di DB tidak tertimpa
+          const payload = { ...data, edited_by: currentUser || 'Admin' };
+          
+          const { error } = await supabase.from(table).update(payload).eq('id', id);
           if(error) throw error;
           await fetchSupabaseData(false); // Refresh
           return true;
@@ -451,9 +485,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       // 1. Insert Previous Funds (DanaSebelumnya_data)
       if (stagedData.previousFunds.length > 0) {
-        const payload = stagedData.previousFunds.map(({ id, createdBy, ...rest }) => ({
+        const payload = stagedData.previousFunds.map(({ id, createdBy, editedBy, ...rest }) => ({
             ...rest,
-            created_by: createdBy
+            created_by: createdBy,       // Siapa yang pertama kali input (dari draft)
+            edited_by: editedBy || createdBy // Siapa yang terakhir edit (jika belum edit, sama dg creator)
         }));
         const { error } = await supabase.from('DanaSebelumnya_data').insert(payload);
         if (error) throw error;
@@ -469,7 +504,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           consumption_cut: item.consumptionCut,
           commission_cut: item.commissionCut,
           net_amount: item.netAmount,
-          created_by: item.createdBy 
+          created_by: item.createdBy,
+          edited_by: item.editedBy || item.createdBy
         }));
         const { error } = await supabase.from('Mingguan_data').insert(weeklyPayload);
         if (error) throw error;
@@ -477,9 +513,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // 3. Insert Donors (Donatur_data)
       if (stagedData.donors.length > 0) {
-        const payload = stagedData.donors.map(({ id, createdBy, ...rest }) => ({
+        const payload = stagedData.donors.map(({ id, createdBy, editedBy, ...rest }) => ({
             ...rest,
-            created_by: createdBy
+            created_by: createdBy,
+            edited_by: editedBy || createdBy
         }));
         const { error } = await supabase.from('Donatur_data').insert(payload);
         if (error) throw error;
@@ -487,9 +524,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // 4. Insert Expenses (Pengeluaran_data)
       if (stagedData.expenses.length > 0) {
-        const payload = stagedData.expenses.map(({ id, createdBy, ...rest }) => ({
+        const payload = stagedData.expenses.map(({ id, createdBy, editedBy, ...rest }) => ({
             ...rest,
-            created_by: createdBy
+            created_by: createdBy,
+            edited_by: editedBy || createdBy
         }));
         const { error } = await supabase.from('Pengeluaran_data').insert(payload);
         if (error) throw error;

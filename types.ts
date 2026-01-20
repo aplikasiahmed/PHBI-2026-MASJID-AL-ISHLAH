@@ -3,7 +3,8 @@ export interface PreviousFund {
   id: string;
   date: string;
   nominal: number;
-  createdBy?: string; // Menambah audit user
+  createdBy?: string; // User yang membuat
+  editedBy?: string;  // User yang terakhir mengedit
 }
 
 export interface WeeklyData {
@@ -15,7 +16,8 @@ export interface WeeklyData {
   consumptionCut: number; // 5%
   commissionCut: number; // 10%
   netAmount: number; // Jumlah Bersih masuk kas
-  createdBy?: string; // Menambah audit user
+  createdBy?: string; // User yang membuat
+  editedBy?: string;  // User yang terakhir mengedit
 }
 
 export interface DonorData {
@@ -24,7 +26,8 @@ export interface DonorData {
   name: string;
   // source: string; // Dihapus
   nominal: number;
-  createdBy?: string; // Menambah audit user
+  createdBy?: string; // User yang membuat
+  editedBy?: string;  // User yang terakhir mengedit
 }
 
 export interface ExpenseData {
@@ -32,7 +35,8 @@ export interface ExpenseData {
   date: string;
   purpose: string; // Keperluan
   nominal: number;
-  createdBy?: string; // Menambah audit user
+  createdBy?: string; // User yang membuat
+  editedBy?: string;  // User yang terakhir mengedit
 }
 
 export interface AppData {

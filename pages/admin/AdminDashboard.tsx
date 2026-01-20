@@ -39,7 +39,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'input', label: 'Input Data', icon: FileInput },
     { id: 'preview', label: 'Preview', icon: Eye },
     { id: 'report', label: 'Laporan', icon: FileText },
-    { id: 'users', label: 'Kelola User', icon: UserCog }, 
+    { id: 'users', label: 'Kelola Admin', icon: UserCog }, 
     { id: 'reset', label: 'Reset', icon: RefreshCcw },
   ];
 
@@ -108,8 +108,8 @@ const AdminDashboard: React.FC = () => {
                              <Icon size={14} className="md:w-4 md:h-4" />
                              <span className="text-[9px] md:text-sm font-medium leading-none text-center whitespace-nowrap">
                                  {/* Singkatkan label di mobile jika perlu, tapi flex-col biasanya cukup */}
-                                 {item.id === 'users' ? <span className="md:hidden">User</span> : null}
-                                 {item.id === 'users' ? <span className="hidden md:inline">Kelola User</span> : null}
+                                 {item.id === 'users' ? <span className="md:hidden">Admin</span> : null}
+                                 {item.id === 'users' ? <span className="hidden md:inline">Kelola Admin</span> : null}
                                  
                                  {item.id !== 'users' && item.label}
                              </span>

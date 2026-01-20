@@ -184,7 +184,7 @@ const PublicHome: React.FC = () => {
               </div>
               <div className="p-3 md:p-5 space-y-2 md:space-y-3 text-xs md:text-sm">
                 <div className="flex justify-between border-b border-gray-100 pb-1.5 md:pb-2">
-                  <span className="text-gray-600 font-medium">Panitia Sebelumnya</span>
+                  <span className="text-gray-600 font-medium">Panitia Sebelumnya (Saldo Awal)</span>
                   <span className="font-bold text-gray-800">{formatCurrency(totalPrevious)}</span>
                 </div>
                 <div className="flex justify-between border-b border-gray-100 pb-1.5 md:pb-2">
@@ -249,8 +249,8 @@ const PublicHome: React.FC = () => {
                     <th className="w-12 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">No</th>
                     <th className="w-20 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">RT</th>
                     <th className="w-40 px-3 py-2 text-center bg-gray-100 border-b border-gray-200">Pemasukan Kotor</th>
-                    <th className="w-32 px-3 py-2 text-center text-red-500 bg-gray-100 border-b border-gray-200">Potongan 5%</th>
-                    <th className="w-32 px-3 py-2 text-center text-red-500 bg-gray-100 border-b border-gray-200">Potongan 10%</th>
+                    <th className="w-32 px-3 py-2 text-center text-red-500 bg-gray-100 border-b border-gray-200">Konsumsi 5%</th>
+                    <th className="w-32 px-3 py-2 text-center text-red-500 bg-gray-100 border-b border-gray-200">Komisi 10%</th>
                     <th className="w-48 px-3 py-2 text-center text-emerald-700 bg-emerald-50/50 border-b border-gray-200">Pendapatan Bersih</th>
                   </tr>
                 </thead>
@@ -308,11 +308,11 @@ const PublicHome: React.FC = () => {
                                 <span>{formatCurrency(item.grossAmount)}</span>
                             </div>
                             <div className="flex justify-between text-[8px] text-red-600">
-                                <span>Potongan 5%</span>
+                                <span>Konsumsi 5%</span>
                                 <span>-{formatCurrency(item.consumptionCut)}</span>
                             </div>
                             <div className="flex justify-between text-[8px] text-red-600">
-                                <span>Potongan 10%</span>
+                                <span>Komisi 10%</span>
                                 <span>-{formatCurrency(item.commissionCut)}</span>
                             </div>
                             
@@ -474,8 +474,8 @@ const PublicHome: React.FC = () => {
                         <td className="px-3 py-2 text-center text-gray-500 font-mono">{idx + 1}</td>
                         <td className="px-3 py-2 text-center whitespace-nowrap text-gray-600">{formatDate(item.date)}</td>
                         {/* UPDATE: Text Left */}
-                        <td className="px-3 py-2 text-left text-gray-800 font-medium truncate">{item.purpose}</td>
-                        <td className="px-3 py-2 text-right font-bold text-red-600 text-[10px] whitespace-nowrap bg-red-50/30">{formatCurrency(item.nominal)}</td>
+                        <td className="px-3 py-2 text-left text-gray-800 truncate">{item.purpose}</td>
+                        <td className="px-3 py-2 text-right text-red-600 text-[10px] font-bold whitespace-nowrap bg-red-50/30">{formatCurrency(item.nominal)}</td>
                       </tr>
                     ))
                   )}

@@ -23,7 +23,7 @@ const MainContent: React.FC = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Input Belum Lengkap',
-        text: 'Mohon lengkapi Username dan Password untuk masuk.',
+        text: 'Mohon lengkapi Username atau Password untuk masuk.',
         confirmButtonColor: '#d4af37' // Gold
       });
       return;
@@ -58,7 +58,7 @@ const MainContent: React.FC = () => {
           icon: 'error',
           title: 'Gagal Masuk',
           text: 'Username atau Password salah. Silakan periksa kembali.',
-          confirmButtonColor: '#064e3b'
+          confirmButtonColor: '#ff0000'
         });
       }
     } catch (error) {

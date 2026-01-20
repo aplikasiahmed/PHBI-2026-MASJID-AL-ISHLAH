@@ -82,7 +82,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
          doc.addImage(logoBase64, 'PNG', 15, 8, 26, 26); 
       }
 
-      doc.setTextColor(0, 0, 0); // Hitam
+      doc.setTextColor(0, 0, 0); // Hitam (Text Color)
 
       // Baris 1: PANITIA HARI BESAR ISLAM
       doc.setFont("times", "bold");
@@ -103,6 +103,9 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       doc.text("Jl. H.A Djuminta Kp. Teriti Rw. 04 Desa Karet Kec. Sepatan Kab. Tangerang", centerX, 33, { align: 'center' });
 
       // C. Garis Pembatas (Double Line)
+      // FIX: Reset Draw Color ke Hitam (0,0,0) agar tidak ikut warna border tabel (abu-abu)
+      doc.setDrawColor(0, 0, 0); 
+
       doc.setLineWidth(0.5);
       doc.line(10, 37, 200, 37); // Garis Tebal
       
@@ -239,7 +242,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
             body: rows,
             theme: 'grid',
             styles: lpjStyles, 
-            showHead: 'everyPage', 
+            showHead: 'firstPage', // REVISI: Only show header on first page of table
             showFoot: 'lastPage',
             headStyles: { ...lpjHeadStyles, fillColor: [88, 28, 135] }, 
             footStyles: { ...lpjStyles, fillColor: [233, 213, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
@@ -252,7 +255,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
             margin: tableMargin,
             foot: [[
                 { content: '', colSpan: 1 },
-                { content: 'TOTAL', styles: { halign: 'right'} },
+                { content: 'TOTAL SALDO AWAL ', styles: { halign: 'right'} },
                 { content: formatCurrency(data.previousFunds.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
             ]]
         });
@@ -301,7 +304,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         body: summaryRows,
         theme: 'grid',
         styles: lpjStyles, 
-        showHead: 'everyPage', 
+        showHead: 'firstPage', // REVISI: Only show header on first page of table
         showFoot: 'lastPage',
         margin: tableMargin,
         headStyles: { ...lpjHeadStyles, fillColor: [13, 148, 136] }, // Tosca
@@ -315,7 +318,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         },
         foot: [[
             { content: '', colSpan: 2 },
-            { content: 'TOTAL', styles: { halign: 'right'} },
+            { content: 'TOTAL PEMASUKAN MINGGUAN ', styles: { halign: 'right'} },
             { content: formatCurrency(totalWeeklyNet), styles: { halign: 'right' } }
         ]]
      });
@@ -336,7 +339,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         body: donorRows,
         theme: 'grid',
         styles: lpjStyles, 
-        showHead: 'everyPage', 
+        showHead: 'firstPage', // REVISI: Only show header on first page of table
         showFoot: 'lastPage',
         margin: tableMargin,
         headStyles: { ...lpjHeadStyles, fillColor: [30, 64, 175] }, // Blue
@@ -350,7 +353,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         },
         foot: [[
             { content: '', colSpan: 2 },
-            { content: 'TOTAL', styles: { halign: 'right' } },
+            { content: 'TOTAL PEMASUKAN PROPOSAL/AMPLOP ', styles: { halign: 'right' } },
             { content: formatCurrency(data.donors.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
         ]]
      });
@@ -371,7 +374,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         body: expenseRows,
         theme: 'grid',
         styles: lpjStyles, 
-        showHead: 'everyPage', 
+        showHead: 'firstPage', // REVISI: Only show header on first page of table
         showFoot: 'lastPage',
         margin: tableMargin,
         headStyles: { ...lpjHeadStyles, fillColor: [185, 28, 28] }, // Red
@@ -385,7 +388,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         },
         foot: [[
             { content: '', colSpan: 2 },
-            { content: 'TOTAL', styles: { halign: 'right' } },
+            { content: 'TOTAL DANA PENGELUARAN ', styles: { halign: 'right' } },
             { content: formatCurrency(data.expenses.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
         ]]
       });
@@ -406,11 +409,11 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         startY: startY, 
         head: [['KETERANGAN', 'NOMINAL']],
         body: [
-            [{ content: 'Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-            [{ content: 'Total Pemasukan Bersih Mingguan (Ringkasan)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalWeekly), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-            [{ content: 'Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-            [{ content: 'TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
-            [{ content: 'TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
+            [{ content: ' Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: ' Total Pemasukan Bersih Mingguan (Ringkasan)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalWeekly), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: ' Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+            [{ content: ' TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
+            [{ content: ' TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
             // REVISI BARIS SALDO: BACKGROUND OREN & ALIGNMENT KANAN
             [
                 { 
@@ -521,7 +524,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                 margin: tableMargin, 
                 foot: [[
                     { content: '', colSpan: 1, styles: { textColor: [0, 0, 0] }},
-                    { content: 'TOTAL', styles: { halign: 'right'} },
+                    { content: 'TOTAL SALDO AWAL ', styles: { halign: 'right'} },
                     { content: formatCurrency(data.previousFunds.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right', textColor: [0, 0, 0] } }
                 ]]
             });
@@ -669,7 +672,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         },
         foot: [[
             { content: '', colSpan: 2 },
-            { content: 'TOTAL', styles: { halign: 'right' } }, 
+            { content: 'TOTAL PEMASUKAN PROPOSAL/AMPLOP ', styles: { halign: 'right' } }, 
             { content: formatCurrency(data.donors.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
         ]]
         });
@@ -705,7 +708,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         },
         foot: [[
             { content: '', colSpan: 2 },
-            { content: 'TOTAL', styles: { halign: 'right' } },
+            { content: 'TOTAL DANA PENGELUARAN ', styles: { halign: 'right' } },
             { content: formatCurrency(data.expenses.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
         ]]
         });
@@ -739,11 +742,11 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
             startY: rekapY + 4, 
             head: [['KETERANGAN', 'NOMINAL']],
             body: [
-                [{ content: 'Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-                [{ content: 'Total Pemasukan Bersih Mingguan (Per RT)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalWeekly), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-                [{ content: 'Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
-                [{ content: 'TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
-                [{ content: 'TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
+                [{ content: ' Total Saldo Awal (Panitia Sebelumnya)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalPrev), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+                [{ content: ' Total Pemasukan Bersih Mingguan (Per RT)', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalWeekly), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+                [{ content: ' Total Pemasukan Proposal / Amplop', styles: { textColor: [0, 0, 0], fontSize: 9 } }, { content: formatCurrency(totalDonor), styles: { fontStyle: 'bold', fontSize: 9, textColor: [0, 0, 0], halign: 'right' } }],
+                [{ content: ' TOTAL SEMUA PEMASUKAN', styles: { fontStyle: 'bold', textColor: [6, 78, 59], fontSize: 10 } }, { content: formatCurrency(totalIncome), styles: { fontStyle: 'bold', fontSize: 10, textColor: [6, 78, 59], halign: 'right' } }],
+                [{ content: ' TOTAL PENGELUARAN', styles: { fontStyle: 'bold', textColor: [185, 28, 28], fontSize: 10 } }, { content: formatCurrency(totalExpense), styles: { fontStyle: 'bold', fontSize: 10, textColor: [185, 28, 28], halign: 'right' } }],
                 // REVISI BARIS SALDO: BACKGROUND OREN & ALIGNMENT KANAN
                 [
                     { 
@@ -782,7 +785,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                     const doc = hookData.doc;
                     const cell = hookData.cell;
                     const textDate = updateDateStr;
-                    const textLabel = "SISA SALDO SAAT INI";
+                    const textLabel = " SISA SALDO SAAT INI";
 
                     // Measure
                     doc.setFont("helvetica", "italic"); doc.setFontSize(8);

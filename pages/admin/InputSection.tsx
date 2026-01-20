@@ -79,7 +79,7 @@ const InputSection: React.FC = () => {
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#047857',
-      cancelButtonColor: '#d33',
+      cancelButtonColor: '#ff0000',
       confirmButtonText: 'Ya, Lanjutkan',
       cancelButtonText: 'Batal'
     }).then((result) => {
@@ -89,87 +89,157 @@ const InputSection: React.FC = () => {
     });
   };
 
-  // REVISI: confirmDelete dengan Input Password & Alert Terpisah (Sukses/Gagal)
+  // REVISI: confirmDelete dengan Logika Otoritasi
+  // 1. Jika Draft (staged) -> Hapus langsung (Konfirmasi biasa)
+  // 2. Jika Published -> Hapus pakai Password
   const confirmDelete = (id: string, source: 'staged' | 'published', type: 'previous' | 'weekly' | 'donor' | 'expense') => {
-    Swal.fire({
-      title: source === 'published' ? 'Hapus dari Database?' : 'Hapus Draft?',
-      html: `
-        <p class="mb-3 text-sm text-gray-600">${source === 'published' ? 'Data ini sudah dipublikasikan. Menghapusnya akan langsung hilang dari website publik.' : 'Data ini belum dipublikasikan.'}</p>
-        <div class="text-left bg-red-50 p-2 rounded border border-red-100 text-red-800 text-xs font-bold mb-2 flex items-center gap-2">
-             🔐 Masukkan Kode ID Server
-        </div>
-      `,
-      icon: 'warning',
-      input: 'password', // Input password untuk kode
-      inputPlaceholder: 'Kode ID Server...',
-      inputAttributes: {
-        autocapitalize: 'off',
-        autocorrect: 'off'
-      },
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Ya, Hapus Data',
-      cancelButtonText: 'Batal'
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-          // 1. Cek Kode ID Server
-          if (result.value === AUTH_CODE) {
-             // JIKA KODE BENAR -> EKSEKUSI HAPUS
-             if (source === 'staged') {
-                 // Local Deletion
-                 if (type === 'previous') deletePreviousFund(id);
-                 if (type === 'weekly') deleteWeeklyData(id);
-                 if (type === 'donor') deleteDonor(id);
-                 if (type === 'expense') deleteExpense(id);
-                 Swal.fire('Terhapus!', 'Data draft berhasil dihapus.', 'success');
-             } else {
-                 // Direct DB Deletion
-                 let table = '';
-                 if (type === 'previous') table = 'DanaSebelumnya_data';
-                 if (type === 'weekly') table = 'Mingguan_data'; 
-                 if (type === 'donor') table = 'Donatur_data';
-                 if (type === 'expense') table = 'Pengeluaran_data';
-                 
-                 if (table) {
-                    const success = await deletePublishedItem(table, id);
-                    if (success) Swal.fire('Terhapus!', 'Data database berhasil dihapus.', 'success');
-                 }
-             }
-             if (editingId === id) cancelEdit(); 
+    
+    if (source === 'staged') {
+        // --- HAPUS DRAFT (TANPA PASSWORD) ---
+        Swal.fire({
+            title: 'Hapus Draft?',
+            text: 'Data draft ini akan dihapus permanen. Lanjutkan?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6', 
+            cancelButtonColor: '#ff0000',
+            confirmButtonText: 'Ya, Hapus Draft',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                if (type === 'previous') deletePreviousFund(id);
+                if (type === 'weekly') deleteWeeklyData(id);
+                if (type === 'donor') deleteDonor(id);
+                if (type === 'expense') deleteExpense(id);
+                
+                Swal.fire({
+                    icon: 'success', 
+                    title: 'Terhapus!', 
+                    text: 'Data draft berhasil dihapus.', 
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                if (editingId === id) cancelEdit();
+            }
+        });
 
-          } else {
-             // JIKA KODE SALAH
-             Swal.fire({
-                title: 'Kode ID Server Gagal!',
-                text: 'Kode ID Server SALAH. Data tidak dihapus.',
-                icon: 'error',
-                confirmButtonColor: '#d33'
-             });
+    } else {
+        // --- HAPUS PUBLISHED (WAJIB PASSWORD) ---
+        Swal.fire({
+            title: 'Hapus dari Database?',
+            html: `
+                <p class="mb-3 text-sm text-gray-600">Data ini sudah dipublikasikan. Menghapusnya akan langsung hilang dari website publik.</p>
+                <div class="text-left bg-red-50 p-2 rounded border border-red-100 text-red-800 text-xs font-bold mb-2 flex items-center gap-2">
+                     🔐 Masukkan Kode ID Server
+                </div>
+            `,
+            icon: 'warning',
+            input: 'password', // Input password untuk kode
+            inputPlaceholder: 'Kode ID Server...',
+            inputAttributes: {
+                autocapitalize: 'off',
+                autocorrect: 'off'
+            },
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6', 
+            cancelButtonColor: '#ff0000',
+            confirmButtonText: 'Ya, Hapus Data',
+            cancelButtonText: 'Batal'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                // 1. Cek Kode ID Server
+                if (result.value === AUTH_CODE) {
+                    // EKSEKUSI HAPUS DATABASE
+                    let table = '';
+                    if (type === 'previous') table = 'DanaSebelumnya_data';
+                    if (type === 'weekly') table = 'Mingguan_data'; 
+                    if (type === 'donor') table = 'Donatur_data';
+                    if (type === 'expense') table = 'Pengeluaran_data';
+                    
+                    if (table) {
+                        const success = await deletePublishedItem(table, id);
+                        if (success) Swal.fire('Terhapus!', 'Data berhasil dihapus dari database.', 'success');
+                    }
+                    if (editingId === id) cancelEdit(); 
+
+                } else {
+                    // JIKA KODE SALAH
+                    Swal.fire({
+                        title: 'Kode ID Server Gagal!',
+                        text: 'Kode ID Server SALAH. Data gagal dihapus.',
+                        icon: 'error',
+                        confirmButtonColor: '#d33'
+                    });
+                }
+            }
+        });
+    }
+  };
+
+  // Helper untuk Update Data Published (Butuh Auth)
+  const confirmUpdatePublished = (callback: () => Promise<void>) => {
+      Swal.fire({
+          title: 'Update Database?',
+          html: `
+            <p class="mb-3 text-sm text-gray-600">Yakin data akan di rubah ? Perubahan akan langsung terlihat publik.</p>
+            <div class="text-left bg-orange-50 p-2 rounded border border-orange-100 text-orange-800 text-xs font-bold mb-2 flex items-center gap-2">
+                 🔐 Masukkan Kode ID Server
+            </div>
+          `,
+          icon: 'warning',
+          input: 'password',
+          inputPlaceholder: 'Kode ID Server...',
+          showCancelButton: true,
+          confirmButtonColor: '#047857',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Ya, Update Data',
+          cancelButtonText: 'Batal'
+      }).then((result) => {
+          if (result.isConfirmed) {
+              if (result.value === AUTH_CODE) {
+                  callback();
+              } else {
+                  Swal.fire('Gagal', 'Kode ID Server SALAH.', 'error');
+              }
           }
-      }
-    });
+      });
   };
 
   // --- HANDLERS ---
 
   // 1. PREVIOUS FUNDS (PANITIA)
   const handleSavePrev = () => {
-    if (!prevForm.date || !prevForm.nominal) return;
+    // REVISI: Validasi Kolom Kosong
+    if (!prevForm.date || !prevForm.nominal) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Opss...',
+            text: 'Mohon isi kolom yang kosong !.',
+            confirmButtonColor: '#ff0000'
+        });
+        return;
+    }
+    
     const nominal = parseNumberInput(prevForm.nominal);
 
     if (editingId) {
-       confirmAction('Update Data?', editingSource === 'published' ? 'Update Database Langsung?' : 'Update Draft?', async () => {
-         if (editingSource === 'published') {
-             const success = await updatePublishedItem('DanaSebelumnya_data', editingId, { date: prevForm.date, nominal: nominal });
-             if (success) { Swal.fire('Sukses', 'Database updated', 'success'); cancelEdit(); }
-         } else {
+       // --- LOGIKA EDIT ---
+       if (editingSource === 'published') {
+           // EDIT PUBLISHED -> BUTUH AUTH
+           confirmUpdatePublished(async () => {
+                const success = await updatePublishedItem('DanaSebelumnya_data', editingId, { date: prevForm.date, nominal: nominal });
+                if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); }
+           });
+       } else {
+           // EDIT DRAFT -> LANGSUNG
+           confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => {
              updatePreviousFund(editingId, { date: prevForm.date, nominal: nominal });
              cancelEdit();
-             Swal.fire('Sukses', 'Draft updated', 'success');
-         }
-       });
+             Swal.fire('Sukses', 'Draft diupdate', 'success');
+           });
+       }
     } else {
+       // --- INPUT BARU (DRAFT) -> LANGSUNG ---
        confirmAction('Simpan Data?', 'Simpan ke Draft?', () => {
          addPreviousFund({ date: prevForm.date, nominal: nominal });
          setEditingId(null); 
@@ -187,28 +257,36 @@ const InputSection: React.FC = () => {
 
   // 2. WEEKLY DATA
   const handleSaveWeek = () => {
-    if (!weekForm.date || !weekForm.gross) return;
+    // REVISI: Validasi Kolom Kosong (Termasuk pilihan Dropdown)
+    if (!weekForm.date || !weekForm.gross || weekForm.week === 'Pilih Minggu' || weekForm.rt === 'Pilih RT') {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Opss...',
+            text: 'Mohon isi kolom yang kosong ! ',
+            confirmButtonColor: '#ff0000'
+        });
+        return;
+    }
     
-    // Check Duplicate (Only for new entries or if editing draft to avoid double entry logic complexity)
+    // Check Duplicate
     if (!editingId || (editingId && editingSource === 'staged')) {
         const isDuplicateStaged = stagedData.weeklyData.some(i => i.week === weekForm.week && i.rt === weekForm.rt && i.id !== editingId);
         const isDuplicatePublished = publishedData.weeklyData.some(i => i.week === weekForm.week && i.rt === weekForm.rt);
 
         if (isDuplicateStaged || isDuplicatePublished) {
-            Swal.fire({ icon: 'warning', title: 'Data Duplikat', text: `${weekForm.week} - ${weekForm.rt} sudah ada.` });
+            Swal.fire({ icon: 'warning', title: 'Data Duplikat', text: `${weekForm.week} - ${weekForm.rt} sudah di Input.` });
             return;
         }
     }
 
     const gross = parseNumberInput(weekForm.gross);
     const { consumption, commission, net } = calculateWeeklyCuts(gross);
-    // Local Payload
-    const payload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, grossAmount: gross, consumptionCut: consumption, commissionCut: commission, netAmount: net };
-
+    
     if (editingId) {
-        confirmAction('Update Data?', editingSource === 'published' ? 'Update Database Langsung?' : 'Update Draft?', async () => {
-            if (editingSource === 'published') {
-                // DB Payload (snake_case columns for Supabase)
+        // --- LOGIKA EDIT ---
+        if (editingSource === 'published') {
+            // EDIT PUBLISHED -> BUTUH AUTH
+            confirmUpdatePublished(async () => {
                 const dbPayload = {
                     date: weekForm.date,
                     week: weekForm.week,
@@ -219,15 +297,21 @@ const InputSection: React.FC = () => {
                     net_amount: net
                 };
                 const success = await updatePublishedItem('Mingguan_data', editingId, dbPayload);
-                if (success) { Swal.fire('Sukses', 'Database updated', 'success'); cancelEdit(); }
-            } else {
+                if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); }
+            });
+        } else {
+            // EDIT DRAFT -> LANGSUNG
+            confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => {
+                const payload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, grossAmount: gross, consumptionCut: consumption, commissionCut: commission, netAmount: net };
                 updateWeeklyData(editingId, payload);
                 cancelEdit();
-                Swal.fire('Berhasil!', 'Data diupdate.', 'success');
-            }
-        });
+                Swal.fire('Berhasil!', 'Draft diupdate.', 'success');
+            });
+        }
     } else {
+        // --- INPUT BARU -> LANGSUNG ---
         confirmAction('Simpan Data?', 'Simpan ke Draft?', () => {
+            const payload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, grossAmount: gross, consumptionCut: consumption, commissionCut: commission, netAmount: net };
             addWeeklyData(payload);
             setWeekForm(prev => ({ ...prev, rt: '', gross: '' }));
             setEditingId(null);
@@ -245,24 +329,39 @@ const InputSection: React.FC = () => {
 
   // 3. DONOR DATA (Full UI)
   const handleSaveDonor = () => {
-    if(!donorForm.name || !donorForm.nominal) return;
+    // REVISI: Validasi Kolom Kosong (Termasuk Tanggal)
+    if(!donorForm.date || !donorForm.name || !donorForm.nominal) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Data Belum Lengkap',
+            text: 'Mohon lengkapi kolom yang kosong',
+            confirmButtonColor: '#d4af37'
+        });
+        return;
+    }
+
     const nominal = parseNumberInput(donorForm.nominal);
 
     if (editingId) {
-        confirmAction('Update Data?', editingSource === 'published' ? 'Update Database Langsung?' : 'Update Draft?', async () => {
-            if (editingSource === 'published') {
+        // --- LOGIKA EDIT ---
+        if (editingSource === 'published') {
+            // EDIT PUBLISHED -> BUTUH AUTH
+            confirmUpdatePublished(async () => {
                 const success = await updatePublishedItem('Donatur_data', editingId, { date: donorForm.date, name: donorForm.name, nominal: nominal });
-                if (success) { Swal.fire('Sukses', 'Database updated', 'success'); cancelEdit(); }
-            } else {
+                if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); }
+            });
+        } else {
+            // EDIT DRAFT -> LANGSUNG
+            confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => {
                 updateDonor(editingId, { date: donorForm.date, name: donorForm.name, nominal: nominal });
                 cancelEdit();
-                Swal.fire('Sukses', 'Draft updated', 'success');
-            }
-        });
+                Swal.fire('Sukses', 'Draft diupdate', 'success');
+            });
+        }
     } else {
+        // --- INPUT BARU -> LANGSUNG ---
         confirmAction('Simpan Data?', 'Simpan ke Draft?', () => {
             addDonor({ date: donorForm.date, name: donorForm.name, nominal: nominal });
-            // Partial Reset: Keep Date, clear Name & Nominal
             setDonorForm(prev => ({ ...prev, name: '', nominal: '' }));
             setEditingId(null);
             Swal.fire('Berhasil', 'Data tersimpan', 'success');
@@ -279,24 +378,39 @@ const InputSection: React.FC = () => {
 
   // 4. EXPENSE DATA (Full UI)
   const handleSaveExp = () => {
-    if(!expForm.purpose || !expForm.nominal) return;
+    // REVISI: Validasi Kolom Kosong (Termasuk Tanggal)
+    if(!expForm.date || !expForm.purpose || !expForm.nominal) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Opss...',
+            text: 'Mohon lengkapi data yang kosong !.',
+            confirmButtonColor: '#ff0000'
+        });
+        return;
+    }
+
     const nominal = parseNumberInput(expForm.nominal);
 
     if (editingId) {
-        confirmAction('Update Data?', editingSource === 'published' ? 'Update Database Langsung?' : 'Update Draft?', async () => {
-            if (editingSource === 'published') {
+        // --- LOGIKA EDIT ---
+        if (editingSource === 'published') {
+            // EDIT PUBLISHED -> BUTUH AUTH
+            confirmUpdatePublished(async () => {
                 const success = await updatePublishedItem('Pengeluaran_data', editingId, { date: expForm.date, purpose: expForm.purpose, nominal: nominal });
-                if (success) { Swal.fire('Sukses', 'Database updated', 'success'); cancelEdit(); }
-            } else {
+                if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); }
+            });
+        } else {
+            // EDIT DRAFT -> LANGSUNG
+            confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => {
                 updateExpense(editingId, { date: expForm.date, purpose: expForm.purpose, nominal: nominal });
                 cancelEdit();
-                Swal.fire('Sukses', 'Draft updated', 'success');
-            }
-        });
+                Swal.fire('Sukses', 'Draft diupdate', 'success');
+            });
+        }
     } else {
+        // --- INPUT BARU -> LANGSUNG ---
         confirmAction('Simpan Data?', 'Simpan ke Draft?', () => {
             addExpense({ date: expForm.date, purpose: expForm.purpose, nominal: nominal });
-            // Partial Reset: Keep Date, clear Purpose & Nominal
             setExpForm(prev => ({ ...prev, purpose: '', nominal: '' }));
             setEditingId(null);
             Swal.fire('Berhasil', 'Data tersimpan', 'success');
@@ -366,7 +480,7 @@ const InputSection: React.FC = () => {
                             <button onClick={cancelEdit} className="w-1/3 bg-red-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
                         )}
                         <button onClick={handleSavePrev} className="flex-1 bg-primary hover:bg-emerald-800 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-2">
-                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN' : 'UPDATE DRAFT') : 'SIMPAN'}
+                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN PERUBAHAN' : 'SIMPAN PERUBAHAN') : 'SIMPAN'}
                         </button>
                      </div>
                 </div>
@@ -445,7 +559,7 @@ const InputSection: React.FC = () => {
                             <button onClick={cancelEdit} className="w-1/3 bg-red-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
                         )}
                         <button onClick={handleSaveWeek} className="flex-1 bg-primary hover:bg-emerald-800 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-2">
-                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN' : 'UPDATE DRAFT') : 'SIMPAN'}
+                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN PERUBAHAN' : 'SIMPAN PERUBAHAN') : 'SIMPAN'}
                         </button>
                     </div>
                 </div>
@@ -535,7 +649,7 @@ const InputSection: React.FC = () => {
                             <button onClick={cancelEdit} className="w-1/3 bg-red-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
                         )}
                         <button onClick={handleSaveDonor} className="flex-1 bg-primary hover:bg-emerald-800 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-2">
-                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN' : 'UPDATE DRAFT') : 'SIMPAN'}
+                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN PERUBAHAN' : 'SIMPAN PERUBAHAN') : 'SIMPAN'}
                         </button>
                      </div>
                  </div>
@@ -613,7 +727,7 @@ const InputSection: React.FC = () => {
                             <button onClick={cancelEdit} className="w-1/3 bg-red-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
                         )}
                         <button onClick={handleSaveExp} className="flex-1 bg-primary hover:bg-emerald-800 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-2">
-                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN' : 'UPDATE DRAFT') : 'SIMPAN'}
+                            {editingId ? <Pencil size={12} className="md:w-3.5 md:h-3.5"/> : <Save size={12} className="md:w-3.5 md:h-3.5"/>} {editingId ? (editingSource === 'published' ? 'SIMPAN PERUBAHAN' : 'SIMPAN PERUBAHAN') : 'SIMPAN'}
                         </button>
                      </div>
                  </div>

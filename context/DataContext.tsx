@@ -212,7 +212,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 icon: 'warning',
                 title: 'Sesi Berakhir',
                 text: 'Anda telah logout otomatis',
-                timer: 3000, // Menutup otomatis dalam 3 detik
+                timer: 2000, // Menutup otomatis dalam 3 detik
                 timerProgressBar: true,
                 showConfirmButton: false, // TIDAK ADA TOMBOL OK
                 allowOutsideClick: false, // Mencegah user menutup paksa dengan klik luar
@@ -466,7 +466,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           await fetchSupabaseData(false); // Refresh
           return true;
       } catch (error: any) {
-          console.error("Delete DB Error", error);
+          console.error("Delete Database Error", error);
           Swal.fire('Gagal Hapus', error.message, 'error');
           return false;
       }

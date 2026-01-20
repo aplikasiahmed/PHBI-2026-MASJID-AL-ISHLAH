@@ -333,7 +333,7 @@ const InputSection: React.FC = () => {
     if(!donorForm.date || !donorForm.name || !donorForm.nominal) {
         Swal.fire({
             icon: 'warning',
-            title: 'Data Belum Lengkap',
+            title: 'Opss...',
             text: 'Mohon lengkapi kolom yang kosong',
             confirmButtonColor: '#d4af37'
         });

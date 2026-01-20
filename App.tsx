@@ -22,9 +22,9 @@ const MainContent: React.FC = () => {
     if (!username || !password) {
       Swal.fire({
         icon: 'warning',
-        title: 'Input Belum Lengkap',
+        title: 'Opss...',
         text: 'Mohon lengkapi Username atau Password untuk masuk.',
-        confirmButtonColor: '#d4af37' // Gold
+        confirmButtonColor: '#ff0000' // merah
       });
       return;
     }
@@ -48,7 +48,7 @@ const MainContent: React.FC = () => {
           title: `Selamat Datang, ${username}!`,
           text: 'Anda berhasil masuk ke Dashboard Admin.',
           showConfirmButton: false,
-          timer: 2000
+          timer: 3000
         });
       } else {
         // 4. Gagal Login & Reset Form
@@ -143,7 +143,7 @@ const MainContent: React.FC = () => {
                   <button 
                     onClick={() => setIsLoginModalOpen(false)}
                     // Tombol Batal diperkecil paddingnya
-                    className="flex-1 bg-gray-100 text-gray-700 py-1.5 md:py-3 rounded-lg hover:bg-gray-200 font-bold border border-gray-300 transition text-xs md:text-sm"
+                    className="flex-1 bg-red-500 text-gray-700 py-1.5 md:py-3 rounded-lg hover:bg-gray-200 font-bold border border-gray-300 transition text-xs md:text-sm"
                     disabled={isLoading}
                   >
                     Batal

@@ -6,6 +6,9 @@ import Swal from 'sweetalert2';
 export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense' | 'all_income' | 'all_financial' | 'accountability') => {
   try {
       const wb = XLSX.utils.book_new();
+      
+      // --- SORTING HELPER (Tanggal Kecil di Atas / Ascending) ---
+      const sortByDateAsc = (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime();
 
       // Helper untuk menambahkan Sheet dengan Style
       const addToSheet = (sheetName: string, headers: string[], rowData: any[]) => {
@@ -79,7 +82,9 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
       // --- 1. SALDO AWAL ---
       if (type === 'all_financial' || type === 'all_income' || type === 'accountability') {
           const headers = ['No', 'Tanggal', 'Nominal'];
-          const rows = data.previousFunds.map((item, idx) => [
+          // SORT
+          const sortedPrev = [...data.previousFunds].sort(sortByDateAsc);
+          const rows = sortedPrev.map((item, idx) => [
               idx + 1,
               formatDate(item.date),
               item.nominal
@@ -95,7 +100,10 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
       if (type === 'weekly' || type === 'all_income' || type === 'all_financial') {
         const headers = ['Minggu', 'Tanggal', 'RT', 'Pemasukan Kotor', 'Potongan Konsumsi (5%)', 'Potongan Komisi (10%)', 'Jumlah Bersih'];
         
-        const rows = data.weeklyData.map(item => [
+        // SORT
+        const sortedWeekly = [...data.weeklyData].sort(sortByDateAsc);
+
+        const rows = sortedWeekly.map(item => [
           item.week,
           formatDate(item.date), 
           item.rt, 
@@ -122,7 +130,11 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
           const headers = ['No', 'Tanggal', 'Nominal Bersih', 'Keterangan'];
           
           const groupedWeeks: Record<string, { date: string, netTotal: number, name: string }> = {};
-          data.weeklyData.forEach(item => {
+          
+          // SORT RAW DATA FOR GROUPING
+          const sortedWeeklyRaw = [...data.weeklyData].sort(sortByDateAsc);
+          
+          sortedWeeklyRaw.forEach(item => {
              if (!groupedWeeks[item.week]) {
                  groupedWeeks[item.week] = { date: item.date, netTotal: 0, name: item.week };
              }
@@ -151,7 +163,9 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
       // --- 3. DONATUR ---
       if (type === 'donor' || type === 'all_income' || type === 'all_financial' || type === 'accountability') {
         const headers = ['No', 'Tanggal', 'Sumber Dana / Donatur', 'Nominal'];
-        const rows = data.donors.map((item, idx) => [
+        // SORT
+        const sortedDonors = [...data.donors].sort(sortByDateAsc);
+        const rows = sortedDonors.map((item, idx) => [
           idx + 1,
           formatDate(item.date),
           item.name,
@@ -167,7 +181,9 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
       // --- 4. PENGELUARAN ---
       if (type === 'expense' || type === 'all_financial' || type === 'accountability') {
         const headers = ['No', 'Tanggal', 'Keperluan', 'Nominal'];
-        const rows = data.expenses.map((item, idx) => [
+        // SORT
+        const sortedExpenses = [...data.expenses].sort(sortByDateAsc);
+        const rows = sortedExpenses.map((item, idx) => [
           idx + 1,
           formatDate(item.date),
           item.purpose,

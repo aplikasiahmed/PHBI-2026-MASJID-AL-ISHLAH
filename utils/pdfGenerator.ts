@@ -63,6 +63,9 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     unit: 'mm',
     format: [210, 330] 
   });
+
+  // --- SORTING HELPER (Tanggal Kecil di Atas / Ascending) ---
+  const sortByDateAsc = (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime();
   
   // --- 1. PREPARE LOGO (Muat sekali di awal) ---
   let logoBase64 = '';
@@ -230,7 +233,9 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
       addLeftTitle('I', 'LAPORAN SALDO AWAL (PANITIA SEBELUMNYA)', true);
       
       if (data.previousFunds.length > 0) {
-        const rows = data.previousFunds.map((item, idx) => [
+        // SORT PREVIOUS FUNDS
+        const sortedPrev = [...data.previousFunds].sort(sortByDateAsc);
+        const rows = sortedPrev.map((item, idx) => [
             idx + 1,
             formatDate(item.date),
             formatCurrency(item.nominal)
@@ -270,7 +275,11 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
 
      // Grouping Logic: Aggregate per Minggu
      const groupedWeeks: Record<string, { date: string, netTotal: number, name: string }> = {};
-     data.weeklyData.forEach(item => {
+     
+     // SORT RAW DATA FIRST FOR SAFETY
+     const sortedWeeklyRaw = [...data.weeklyData].sort(sortByDateAsc);
+
+     sortedWeeklyRaw.forEach(item => {
         if (!groupedWeeks[item.week]) {
             groupedWeeks[item.week] = {
                 date: item.date, // Ambil tanggal pertama yang ketemu
@@ -326,7 +335,9 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
      // 3. PEMASUKAN PROPOSAL / AMPLOP
      addLeftTitle('III', 'LAPORAN PEMASUKAN PROPOSAL / AMPLOP');
      
-     const donorRows = data.donors.map((item, idx) => [
+     // SORT DONORS
+     const sortedDonors = [...data.donors].sort(sortByDateAsc);
+     const donorRows = sortedDonors.map((item, idx) => [
          idx + 1,
          formatDate(item.date),
          item.name,
@@ -361,7 +372,9 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
      // 4. PENGELUARAN
      addLeftTitle('IV', 'LAPORAN DANA PENGELUARAN');
 
-     const expenseRows = data.expenses.map((item, idx) => [
+     // SORT EXPENSES
+     const sortedExpenses = [...data.expenses].sort(sortByDateAsc);
+     const expenseRows = sortedExpenses.map((item, idx) => [
         idx + 1,
         formatDate(item.date),
         item.purpose,
@@ -500,7 +513,9 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         addTitle('LAPORAN SALDO AWAL (PANITIA SEBELUMNYA)', true);
         
         if (data.previousFunds.length > 0) {
-            const rows = data.previousFunds.map((item, idx) => [
+            // SORT PREVIOUS
+            const sortedPrev = [...data.previousFunds].sort(sortByDateAsc);
+            const rows = sortedPrev.map((item, idx) => [
                 idx + 1,
                 formatDate(item.date),
                 formatCurrency(item.nominal)
@@ -541,7 +556,11 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         addTitle('LAPORAN PEMASUKAN MINGGUAN (PER RT)', type !== 'all_financial' && type !== 'all_income');
         
         const groupedByWeek: Record<string, any[]> = {};
-        data.weeklyData.forEach(item => {
+        
+        // SORT RAW WEEKLY DATA
+        const sortedWeeklyRaw = [...data.weeklyData].sort(sortByDateAsc);
+        
+        sortedWeeklyRaw.forEach(item => {
             if (!groupedByWeek[item.week]) groupedByWeek[item.week] = [];
             groupedByWeek[item.week].push(item);
         });
@@ -560,6 +579,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
 
         sortedWeeks.forEach(week => {
             const items = groupedByWeek[week];
+            // Sort items inside week by RT (usually RT 01, RT 02...)
             items.sort((a, b) => a.rt.localeCompare(b.rt));
 
             let totalGrossWeek = 0;
@@ -646,11 +666,13 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     if (type === 'donor' || type === 'all_income' || type === 'all_financial') {
         addTitle('LAPORAN PEMASUKAN PROPOSAL / AMPLOP', type === 'donor');
 
-        const rows = data.donors.map((item, idx) => [
-        idx + 1,
-        formatDate(item.date),
-        item.name,
-        formatCurrency(item.nominal)
+        // SORT DONORS
+        const sortedDonors = [...data.donors].sort(sortByDateAsc);
+        const rows = sortedDonors.map((item, idx) => [
+            idx + 1,
+            formatDate(item.date),
+            item.name,
+            formatCurrency(item.nominal)
         ]);
 
         autoTable(doc, {
@@ -682,11 +704,13 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     if (type === 'expense' || type === 'all_financial') {
         addTitle('LAPORAN DANA PENGELUARAN', type === 'expense');
         
-        const rows = data.expenses.map((item, idx) => [
-        idx + 1,
-        formatDate(item.date),
-        item.purpose,
-        formatCurrency(item.nominal)
+        // SORT EXPENSES
+        const sortedExpenses = [...data.expenses].sort(sortByDateAsc);
+        const rows = sortedExpenses.map((item, idx) => [
+            idx + 1,
+            formatDate(item.date),
+            item.purpose,
+            formatCurrency(item.nominal)
         ]);
 
         autoTable(doc, {

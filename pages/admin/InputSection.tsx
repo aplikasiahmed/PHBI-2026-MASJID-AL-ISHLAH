@@ -29,26 +29,29 @@ const InputSection: React.FC = () => {
   // TEMPAT GANTI KODE ID Server
   const AUTH_CODE = "ALISHLAH2026";
 
-  // --- MERGE LIST FOR DISPLAY (HYBRID: STAGED + PUBLISHED) ---
+  // Helper Sort Date Ascending (Terlama ke Terbaru)
+  const sortByDateAsc = (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime();
+
+  // --- MERGE LIST FOR DISPLAY (HYBRID: STAGED + PUBLISHED) & SORTING ---
   const allPreviousFunds = [
       ...stagedData.previousFunds.map(i => ({ ...i, source: 'staged' as const })),
       ...publishedData.previousFunds.map(i => ({ ...i, source: 'published' as const }))
-  ];
+  ].sort(sortByDateAsc);
 
   const allWeeklyData = [
       ...stagedData.weeklyData.map(i => ({ ...i, source: 'staged' as const })),
       ...publishedData.weeklyData.map(i => ({ ...i, source: 'published' as const }))
-  ];
+  ].sort(sortByDateAsc);
 
   const allDonors = [
       ...stagedData.donors.map(i => ({ ...i, source: 'staged' as const })),
       ...publishedData.donors.map(i => ({ ...i, source: 'published' as const }))
-  ];
+  ].sort(sortByDateAsc);
 
   const allExpenses = [
       ...stagedData.expenses.map(i => ({ ...i, source: 'staged' as const })),
       ...publishedData.expenses.map(i => ({ ...i, source: 'published' as const }))
-  ];
+  ].sort(sortByDateAsc);
 
   // Helper: Format tampilan saat mengetik
   const formatNumberInput = (value: string | number) => {
@@ -72,6 +75,10 @@ const InputSection: React.FC = () => {
     if (!value) return 0;
     return Number(value.replace(/\./g, ''));
   };
+
+  // --- CALCULATE REALTIME CUTS FOR FORM DISPLAY (READONLY FEATURE) ---
+  const currentGross = parseNumberInput(weekForm.gross);
+  const { consumption: calcCons, commission: calcComm, net: calcNet } = calculateWeeklyCuts(currentGross);
 
   const cancelEdit = () => {
     setEditingId(null);
@@ -100,12 +107,8 @@ const InputSection: React.FC = () => {
   };
 
   // REVISI: confirmDelete dengan Logika Otoritasi
-  // 1. Jika Draft (staged) -> Hapus langsung (Konfirmasi biasa)
-  // 2. Jika Published -> Hapus pakai Password
   const confirmDelete = (id: string, source: 'staged' | 'published', type: 'previous' | 'weekly' | 'donor' | 'expense') => {
-    
     if (source === 'staged') {
-        // --- HAPUS DRAFT (TANPA PASSWORD) ---
         Swal.fire({
             title: 'Hapus Draft?',
             text: 'Data draft ini akan dihapus permanen. Lanjutkan?',
@@ -132,9 +135,7 @@ const InputSection: React.FC = () => {
                 if (editingId === id) cancelEdit();
             }
         });
-
     } else {
-        // --- HAPUS PUBLISHED (WAJIB PASSWORD) ---
         Swal.fire({
             title: 'Hapus dari Database?',
             html: `
@@ -144,12 +145,9 @@ const InputSection: React.FC = () => {
                 </div>
             `,
             icon: 'warning',
-            input: 'password', // Input password untuk kode
+            input: 'password',
             inputPlaceholder: 'Kode ID Server...',
-            inputAttributes: {
-                autocapitalize: 'off',
-                autocorrect: 'off'
-            },
+            inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
             showCancelButton: true,
             confirmButtonColor: '#3085d6', 
             cancelButtonColor: '#ff0000',
@@ -157,9 +155,7 @@ const InputSection: React.FC = () => {
             cancelButtonText: 'Batal'
         }).then(async (result) => {
             if (result.isConfirmed) {
-                // 1. Cek Kode ID Server
                 if (result.value === AUTH_CODE) {
-                    // EKSEKUSI HAPUS DATABASE
                     let table = '';
                     if (type === 'previous') table = 'DanaSebelumnya_data';
                     if (type === 'weekly') table = 'Mingguan_data'; 
@@ -171,9 +167,7 @@ const InputSection: React.FC = () => {
                         if (success) Swal.fire('Terhapus!', 'Data berhasil dihapus dari database.', 'success');
                     }
                     if (editingId === id) cancelEdit(); 
-
                 } else {
-                    // JIKA KODE SALAH
                     Swal.fire({
                         title: 'Kode ID Server Gagal!',
                         text: 'Kode ID Server SALAH. Data gagal dihapus.',
@@ -186,7 +180,6 @@ const InputSection: React.FC = () => {
     }
   };
 
-  // Helper untuk Update Data Published (Butuh Auth)
   const confirmUpdatePublished = (callback: () => Promise<void>) => {
       Swal.fire({
           title: 'Update Database?',
@@ -216,241 +209,121 @@ const InputSection: React.FC = () => {
   };
 
   // --- HANDLERS ---
-
-  // 1. PREVIOUS FUNDS (PANITIA)
   const handleSavePrev = () => {
-    // REVISI: Validasi Kolom Kosong
-    if (!prevForm.date || !prevForm.nominal) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Opss...',
-            text: 'Mohon isi kolom yang kosong !.',
-            confirmButtonColor: '#ff0000'
-        });
-        return;
-    }
-    
+    if (!prevForm.date || !prevForm.nominal) { Swal.fire({ icon: 'warning', title: 'Opss...', text: 'Mohon isi kolom yang kosong !.', confirmButtonColor: '#ff0000' }); return; }
     const nominal = parseNumberInput(prevForm.nominal);
-
     if (editingId) {
-       // --- LOGIKA EDIT ---
        if (editingSource === 'published') {
-           // EDIT PUBLISHED -> BUTUH AUTH
-           confirmUpdatePublished(async () => {
-                const success = await updatePublishedItem('DanaSebelumnya_data', editingId, { date: prevForm.date, nominal: nominal });
-                if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); }
-           });
+           confirmUpdatePublished(async () => { const success = await updatePublishedItem('DanaSebelumnya_data', editingId, { date: prevForm.date, nominal: nominal }); if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); } });
        } else {
-           // EDIT DRAFT -> LANGSUNG
-           confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => {
-             updatePreviousFund(editingId, { date: prevForm.date, nominal: nominal });
-             cancelEdit();
-             Swal.fire('Sukses', 'Draft diupdate', 'success');
-           });
+           confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => { updatePreviousFund(editingId, { date: prevForm.date, nominal: nominal }); cancelEdit(); Swal.fire('Sukses', 'Draft diupdate', 'success'); });
        }
     } else {
-       // --- INPUT BARU (DRAFT) -> LANGSUNG ---
-       confirmAction('Simpan Data?', 'Simpan ke Draft?', () => {
-         addPreviousFund({ date: prevForm.date, nominal: nominal });
-         setEditingId(null); 
-         Swal.fire('Berhasil!', 'Data disimpan ke draft.', 'success');
-       });
+       confirmAction('Simpan Data?', 'Simpan ke Draft?', () => { addPreviousFund({ date: prevForm.date, nominal: nominal }); setEditingId(null); Swal.fire('Berhasil!', 'Data disimpan ke draft.', 'success'); });
     }
   };
 
   const handleEditPrev = (data: any) => {
-    setEditingId(data.id);
-    setEditingSource(data.source || 'staged');
-    setPrevForm({ date: data.date, nominal: formatNumberInput(data.nominal) });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setEditingId(data.id); setEditingSource(data.source || 'staged'); setPrevForm({ date: data.date, nominal: formatNumberInput(data.nominal) }); window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 2. WEEKLY DATA
   const handleSaveWeek = () => {
-    // REVISI: Validasi Kolom Kosong (Termasuk pilihan Dropdown)
-    if (!weekForm.date || !weekForm.gross || weekForm.week === 'Pilih Minggu' || weekForm.rt === 'Pilih RT') {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Opss...',
-            text: 'Mohon isi kolom yang kosong ! ',
-            confirmButtonColor: '#ff0000'
-        });
-        return;
-    }
-    
-    // Check Duplicate
+    if (!weekForm.date || !weekForm.gross || weekForm.week === 'Pilih Minggu' || weekForm.rt === 'Pilih RT') { Swal.fire({ icon: 'warning', title: 'Opss...', text: 'Mohon isi kolom yang kosong ! ', confirmButtonColor: '#ff0000' }); return; }
     if (!editingId || (editingId && editingSource === 'staged')) {
         const isDuplicateStaged = stagedData.weeklyData.some(i => i.week === weekForm.week && i.rt === weekForm.rt && i.id !== editingId);
         const isDuplicatePublished = publishedData.weeklyData.some(i => i.week === weekForm.week && i.rt === weekForm.rt);
-
-        if (isDuplicateStaged || isDuplicatePublished) {
-            Swal.fire({ icon: 'warning', title: 'Data Duplikat', text: `${weekForm.week} - ${weekForm.rt} sudah di Input.` });
-            return;
-        }
+        if (isDuplicateStaged || isDuplicatePublished) { Swal.fire({ icon: 'warning', title: 'Data Duplikat', text: `${weekForm.week} - ${weekForm.rt} sudah di Input.` }); return; }
     }
-
-    const gross = parseNumberInput(weekForm.gross);
-    const { consumption, commission, net } = calculateWeeklyCuts(gross);
-    
+    const gross = parseNumberInput(weekForm.gross); const { consumption, commission, net } = calculateWeeklyCuts(gross);
     if (editingId) {
-        // --- LOGIKA EDIT ---
         if (editingSource === 'published') {
-            // EDIT PUBLISHED -> BUTUH AUTH
-            confirmUpdatePublished(async () => {
-                const dbPayload = {
-                    date: weekForm.date,
-                    week: weekForm.week,
-                    rt: weekForm.rt,
-                    gross_amount: gross,
-                    consumption_cut: consumption,
-                    commission_cut: commission,
-                    net_amount: net
-                };
-                const success = await updatePublishedItem('Mingguan_data', editingId, dbPayload);
-                if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); }
-            });
+            confirmUpdatePublished(async () => { const dbPayload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, gross_amount: gross, consumption_cut: consumption, commission_cut: commission, net_amount: net }; const success = await updatePublishedItem('Mingguan_data', editingId, dbPayload); if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); } });
         } else {
-            // EDIT DRAFT -> LANGSUNG
-            confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => {
-                const payload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, grossAmount: gross, consumptionCut: consumption, commissionCut: commission, netAmount: net };
-                updateWeeklyData(editingId, payload);
-                cancelEdit();
-                Swal.fire('Berhasil!', 'Draft diupdate.', 'success');
-            });
+            confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => { const payload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, grossAmount: gross, consumptionCut: consumption, commissionCut: commission, netAmount: net }; updateWeeklyData(editingId, payload); cancelEdit(); Swal.fire('Berhasil!', 'Draft diupdate.', 'success'); });
         }
     } else {
-        // --- INPUT BARU -> LANGSUNG ---
-        confirmAction('Simpan Data?', 'Simpan ke Draft?', () => {
-            const payload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, grossAmount: gross, consumptionCut: consumption, commissionCut: commission, netAmount: net };
-            addWeeklyData(payload);
-            setWeekForm(prev => ({ ...prev, rt: '', gross: '' }));
-            setEditingId(null);
-            Swal.fire('Berhasil!', 'Data disimpan.', 'success');
-        });
+        confirmAction('Simpan Data?', 'Simpan ke Draft?', () => { const payload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, grossAmount: gross, consumptionCut: consumption, commissionCut: commission, netAmount: net }; addWeeklyData(payload); setWeekForm(prev => ({ ...prev, rt: '', gross: '' })); setEditingId(null); Swal.fire('Berhasil!', 'Data disimpan.', 'success'); });
     }
   };
 
   const handleEditWeek = (data: any) => {
-    setEditingId(data.id);
-    setEditingSource(data.source || 'staged');
-    setWeekForm({ date: data.date, week: data.week, rt: data.rt, gross: formatNumberInput(data.grossAmount) });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setEditingId(data.id); setEditingSource(data.source || 'staged'); setWeekForm({ date: data.date, week: data.week, rt: data.rt, gross: formatNumberInput(data.grossAmount) }); window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 3. DONOR DATA (Full UI)
   const handleSaveDonor = () => {
-    // REVISI: Validasi Kolom Kosong (Termasuk Tanggal)
-    if(!donorForm.date || !donorForm.name || !donorForm.nominal) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Opss...',
-            text: 'Mohon lengkapi kolom yang kosong',
-            confirmButtonColor: '#d4af37'
-        });
-        return;
-    }
-
+    if(!donorForm.date || !donorForm.name || !donorForm.nominal) { Swal.fire({ icon: 'warning', title: 'Opss...', text: 'Mohon lengkapi kolom yang kosong', confirmButtonColor: '#d4af37' }); return; }
     const nominal = parseNumberInput(donorForm.nominal);
-
     if (editingId) {
-        // --- LOGIKA EDIT ---
         if (editingSource === 'published') {
-            // EDIT PUBLISHED -> BUTUH AUTH
-            confirmUpdatePublished(async () => {
-                const success = await updatePublishedItem('Donatur_data', editingId, { date: donorForm.date, name: donorForm.name, nominal: nominal });
-                if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); }
-            });
+            confirmUpdatePublished(async () => { const success = await updatePublishedItem('Donatur_data', editingId, { date: donorForm.date, name: donorForm.name, nominal: nominal }); if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); } });
         } else {
-            // EDIT DRAFT -> LANGSUNG
-            confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => {
-                updateDonor(editingId, { date: donorForm.date, name: donorForm.name, nominal: nominal });
-                cancelEdit();
-                Swal.fire('Sukses', 'Draft diupdate', 'success');
-            });
+            confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => { updateDonor(editingId, { date: donorForm.date, name: donorForm.name, nominal: nominal }); cancelEdit(); Swal.fire('Sukses', 'Draft diupdate', 'success'); });
         }
     } else {
-        // --- INPUT BARU -> LANGSUNG ---
-        confirmAction('Simpan Data?', 'Simpan ke Draft?', () => {
-            addDonor({ date: donorForm.date, name: donorForm.name, nominal: nominal });
-            setDonorForm(prev => ({ ...prev, name: '', nominal: '' }));
-            setEditingId(null);
-            Swal.fire('Berhasil', 'Data tersimpan', 'success');
-        });
+        confirmAction('Simpan Data?', 'Simpan ke Draft?', () => { addDonor({ date: donorForm.date, name: donorForm.name, nominal: nominal }); setDonorForm(prev => ({ ...prev, name: '', nominal: '' })); setEditingId(null); Swal.fire('Berhasil', 'Data tersimpan', 'success'); });
     }
   };
 
   const handleEditDonor = (data: any) => {
-    setEditingId(data.id);
-    setEditingSource(data.source || 'staged');
-    setDonorForm({ date: data.date, name: data.name, nominal: formatNumberInput(data.nominal) });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setEditingId(data.id); setEditingSource(data.source || 'staged'); setDonorForm({ date: data.date, name: data.name, nominal: formatNumberInput(data.nominal) }); window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 4. EXPENSE DATA (Full UI)
   const handleSaveExp = () => {
-    // REVISI: Validasi Kolom Kosong (Termasuk Tanggal)
-    if(!expForm.date || !expForm.purpose || !expForm.nominal) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Opss...',
-            text: 'Mohon lengkapi data yang kosong !.',
-            confirmButtonColor: '#ff0000'
-        });
-        return;
-    }
-
+    if(!expForm.date || !expForm.purpose || !expForm.nominal) { Swal.fire({ icon: 'warning', title: 'Opss...', text: 'Mohon lengkapi data yang kosong !.', confirmButtonColor: '#ff0000' }); return; }
     const nominal = parseNumberInput(expForm.nominal);
-
     if (editingId) {
-        // --- LOGIKA EDIT ---
         if (editingSource === 'published') {
-            // EDIT PUBLISHED -> BUTUH AUTH
-            confirmUpdatePublished(async () => {
-                const success = await updatePublishedItem('Pengeluaran_data', editingId, { date: expForm.date, purpose: expForm.purpose, nominal: nominal });
-                if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); }
-            });
+            confirmUpdatePublished(async () => { const success = await updatePublishedItem('Pengeluaran_data', editingId, { date: expForm.date, purpose: expForm.purpose, nominal: nominal }); if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); } });
         } else {
-            // EDIT DRAFT -> LANGSUNG
-            confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => {
-                updateExpense(editingId, { date: expForm.date, purpose: expForm.purpose, nominal: nominal });
-                cancelEdit();
-                Swal.fire('Sukses', 'Draft diupdate', 'success');
-            });
+            confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => { updateExpense(editingId, { date: expForm.date, purpose: expForm.purpose, nominal: nominal }); cancelEdit(); Swal.fire('Sukses', 'Draft diupdate', 'success'); });
         }
     } else {
-        // --- INPUT BARU -> LANGSUNG ---
-        confirmAction('Simpan Data?', 'Simpan ke Draft?', () => {
-            addExpense({ date: expForm.date, purpose: expForm.purpose, nominal: nominal });
-            setExpForm(prev => ({ ...prev, purpose: '', nominal: '' }));
-            setEditingId(null);
-            Swal.fire('Berhasil', 'Data tersimpan', 'success');
-        });
+        confirmAction('Simpan Data?', 'Simpan ke Draft?', () => { addExpense({ date: expForm.date, purpose: expForm.purpose, nominal: nominal }); setExpForm(prev => ({ ...prev, purpose: '', nominal: '' })); setEditingId(null); Swal.fire('Berhasil', 'Data tersimpan', 'success'); });
     }
   };
 
   const handleEditExp = (data: any) => {
-    setEditingId(data.id);
-    setEditingSource(data.source || 'staged');
-    setExpForm({ date: data.date, purpose: data.purpose, nominal: formatNumberInput(data.nominal) });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setEditingId(data.id); setEditingSource(data.source || 'staged'); setExpForm({ date: data.date, purpose: data.purpose, nominal: formatNumberInput(data.nominal) }); window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // UI HELPERS (OPTIMIZED FOR MOBILE)
   const tabClass = (tab: string) => 
     `flex-1 text-center md:flex-none px-1 py-1.5 md:px-4 md:py-3 rounded-t-lg font-bold text-[9px] md:text-sm transition-colors whitespace-nowrap ${activeTab === tab ? 'bg-primary text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
   
-  // GENERAL INPUT (Text/Select)
   const inputClass = "w-full bg-white border border-gray-300 text-gray-900 text-[10px] md:text-sm rounded-lg px-2 py-1.5 md:px-3 md:py-2 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-sm";
-  
-  // DATE INPUT (KHUSUS: Lebih Compact di Mobile)
   const dateClass = "w-full bg-white border border-gray-300 text-gray-900 text-[10px] md:text-sm rounded-lg px-2 py-0 md:px-3 md:py-2 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-sm h-[28px] md:h-auto leading-none appearance-none";
-
   const inputRpClass = "w-full bg-white border border-gray-300 text-gray-900 text-[10px] md:text-sm rounded-lg pl-6 md:pl-10 pr-2 py-1.5 md:px-3 md:py-2 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-sm font-mono tracking-wide";
+  
+  // New Class for Readonly Inputs
+  const inputReadonlyClass = "w-full border border-gray-200 text-gray-700 text-[10px] md:text-sm rounded-lg px-2 py-1.5 md:px-3 md:py-2 font-mono tracking-wide cursor-not-allowed focus:outline-none shadow-sm";
 
   const renderStatusBadge = (source: string) => (
       source === 'published' ? 
-      <span className="flex items-center gap-1 text-green-600 text-[9px] md:text-[10px] font-bold bg-green-50 px-1.5 py-0.5 rounded-full w-fit"><CheckCircle size={10}/> Publish</span> : 
-      <span className="flex items-center gap-1 text-orange-600 text-[9px] md:text-[10px] font-bold bg-orange-50 px-1.5 py-0.5 rounded-full w-fit"><Clock size={10}/> Draft</span>
+      <span className="flex items-center gap-1 text-green-600 text-[8px] md:text-[10px] font-bold bg-green-50 px-1.5 py-0.5 rounded-full w-fit"><CheckCircle size={10}/> Publish</span> : 
+      <span className="flex items-center gap-1 text-orange-600 text-[8px] md:text-[10px] font-bold bg-orange-50 px-1.5 py-0.5 rounded-full w-fit"><Clock size={10}/> Draft</span>
+  );
+
+  // --- REVISED: SIMPLE BUTTONS WITHOUT ANIMATION OR FANCY TOOLTIPS ---
+  // layout: 'row' (horizontal) | 'col' (vertical)
+  const getActionButtons = (item: any, type: any, layout: 'row' | 'col' = 'col') => (
+      <div className={`flex ${layout === 'col' ? 'flex-col gap-0.5 md:gap-1' : 'flex-row gap-2'} justify-center items-center w-full`}>
+          {/* EDIT BUTTON */}
+          <button 
+            onClick={() => type === 'previous' ? handleEditPrev(item) : type === 'weekly' ? handleEditWeek(item) : type === 'donor' ? handleEditDonor(item) : handleEditExp(item)}
+            className="flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white p-1 md:p-1.5 rounded-full transition-all duration-200 border border-blue-100 hover:border-blue-600"
+            title="Edit"
+          >
+            <Pencil size={12} className="md:w-3.5 md:h-3.5" />
+          </button>
+
+          {/* DELETE BUTTON */}
+          <button 
+            onClick={() => confirmDelete(item.id, item.source, type)} 
+            className="flex items-center justify-center text-red-600 bg-red-50 hover:bg-red-600 hover:text-white p-1 md:p-1.5 rounded-full transition-all duration-200 border border-red-100 hover:border-red-600"
+            title="Hapus"
+          >
+            <Trash2 size={12} className="md:w-3.5 md:h-3.5" />
+          </button>
+      </div>
   );
 
   return (
@@ -459,7 +332,6 @@ const InputSection: React.FC = () => {
           {editingId ? `Edit Data ${editingSource === 'published' ? '(Database)' : '(Draft)'}` : 'Input Data Keuangan'}
       </h2>
       
-      {/* Tabs (Grid Layout on Mobile to prevent scroll) */}
       <div className={`flex w-full gap-0.5 md:gap-1 ${editingId ? 'opacity-50 pointer-events-none' : ''}`}>
         <button onClick={() => setActiveTab('previous')} className={tabClass('previous')}>Saldo Awal</button>
         <button onClick={() => setActiveTab('weekly')} className={tabClass('weekly')}>Mingguan</button>
@@ -496,7 +368,7 @@ const InputSection: React.FC = () => {
                 </div>
             </div>
             
-            {/* Table Hybrid */}
+            {/* Table Hybrid - Desktop */}
             <div className="hidden md:block">
               <table className="w-full text-sm text-left">
                   <thead className="bg-gray-100 uppercase text-gray-700"><tr><th className="p-3">Status</th><th className="p-3">Tgl</th><th className="p-3">Nominal</th><th className="p-3">Aksi</th></tr></thead>
@@ -504,11 +376,12 @@ const InputSection: React.FC = () => {
                       {allPreviousFunds.map((d: any) => (
                           <tr key={d.id} className={`border-b ${editingId === d.id ? 'bg-blue-50' : ''}`}>
                               <td className="p-3">{renderStatusBadge(d.source)}</td>
-                              <td className="p-3">{formatDate(d.date)}</td>
-                              <td className="p-3 font-bold">{formatCurrency(d.nominal)}</td>
-                              <td className="p-3 flex gap-2">
-                                  <button onClick={() => handleEditPrev(d)} className="text-blue-600 bg-blue-50 p-2 rounded-full"><Pencil size={14}/></button>
-                                  <button onClick={() => confirmDelete(d.id, d.source, 'previous')} className="text-red-600 bg-red-50 p-2 rounded-full"><Trash2 size={14}/></button>
+                              {/* Apply Text Color: Red if Draft, Gray if Published */}
+                              <td className={`p-3 ${d.source === 'staged' ? 'text-red-600 font-medium' : 'text-gray-700'}`}>{formatDate(d.date)}</td>
+                              <td className={`p-3 font-bold ${d.source === 'staged' ? 'text-red-600' : 'text-gray-900'}`}>{formatCurrency(d.nominal)}</td>
+                              <td className="p-1 text-center align-middle w-16"> 
+                                  {/* Desktop: Vertical */}
+                                  {getActionButtons(d, 'previous', 'col')}
                               </td>
                           </tr>
                       ))}
@@ -516,28 +389,60 @@ const InputSection: React.FC = () => {
               </table>
             </div>
 
-             {/* Mobile Cards (Compact) */}
-             <div className="md:hidden space-y-1.5">
-               {allPreviousFunds.map((d: any) => (
-                 <div key={d.id} className={`border p-1.5 rounded-lg shadow-sm flex justify-between items-center ${d.source === 'published' ? 'border-green-200 bg-white' : 'border-orange-200 bg-orange-50/30'}`}>
-                    <div>
-                        <div className="flex gap-2 items-center mb-0.5">{renderStatusBadge(d.source)}<span className="text-[9px] text-gray-500">{formatDate(d.date)}</span></div>
-                        <p className="font-bold text-gray-800 text-xs">{formatCurrency(d.nominal)}</p>
-                    </div>
-                    <div className="flex gap-1.5">
-                        <button onClick={() => handleEditPrev(d)} className="bg-blue-50 text-blue-600 p-1 rounded-lg"><Pencil size={12}/></button>
-                        <button onClick={() => confirmDelete(d.id, d.source, 'previous')} className="bg-red-50 text-red-600 p-1 rounded-lg"><Trash2 size={12}/></button>
-                    </div>
-                 </div>
-               ))}
+             {/* Mobile TABLE (Fixed Scroll) with 7px Font */}
+             <div className="md:hidden border rounded-lg overflow-hidden border-gray-200">
+               <div className="overflow-y-auto max-h-[300px] overflow-x-hidden relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                   <table className="w-full text-[7px] table-fixed relative border-collapse">
+                        <thead className="sticky top-0 z-10 bg-gray-100 shadow-sm text-gray-700 uppercase font-bold">
+                            <tr>
+                                <th className="w-[10%] py-2 text-center border-b border-r border-gray-200">No</th>
+                                <th className="w-[25%] py-2 text-center border-b border-r border-gray-200">Tgl</th>
+                                <th className="w-[35%] py-2 text-right px-2 border-b border-r border-gray-200">Nominal</th>
+                                <th className="w-[30%] py-2 text-center border-b border-gray-200">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {allPreviousFunds.map((d, idx) => (
+                                <tr key={d.id} className={`border-b border-gray-50 ${d.source === 'staged' ? 'bg-white' : 'bg-white'}`}>
+                                    <td className="py-2 text-center text-gray-500 border-r border-gray-100 align-top">{idx+1}</td>
+                                    <td className="py-2 text-center align-top border-r border-gray-100">
+                                        {/* Added Status Badge in Mobile View */}
+                                        <div className="flex justify-center mb-1">{renderStatusBadge(d.source)}</div>
+                                        <div className={`leading-tight ${d.source === 'staged' ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
+                                            {formatDateShort(d.date)}
+                                        </div>
+                                    </td>
+                                    <td className={`py-2 px-2 text-right font-bold truncate border-r border-gray-100 align-top ${d.source === 'staged' ? 'text-red-600' : 'text-gray-800'}`}>
+                                        {formatCurrency(d.nominal)}
+                                    </td>
+                                    <td className="py-2 flex justify-center items-center align-top">
+                                        {/* Mobile: Horizontal (Row) */}
+                                        {getActionButtons(d, 'previous', 'row')}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        <tfoot className="sticky bottom-0 z-10 bg-gray-50 border-t shadow-[0_-2px_4px_rgba(0,0,0,0.05)] font-bold">
+                            <tr>
+                                <td colSpan={2} className="py-2 px-2 text-right text-gray-600 uppercase">Total</td>
+                                <td className="py-2 px-2 text-right text-emerald-800 border-r border-gray-100">
+                                    {formatCurrency(allPreviousFunds.reduce((a,b) => a + b.nominal, 0))}
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                   </table>
+               </div>
             </div>
           </div>
         )}
 
-        {/* === 2. WEEKLY FORM (FULL UI & HYBRID) === */}
+        {/* === 2. WEEKLY FORM === */}
         {activeTab === 'weekly' && (
           <div className="space-y-2 md:space-y-6">
-            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2 md:gap-3 bg-gray-50 p-2 md:p-3 rounded-lg border ${editingId ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}>
+             {/* ... Form Inputs with Readonly Fields ... */}
+            <div className={`grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-3 bg-gray-50 p-2 md:p-3 rounded-lg border ${editingId ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}>
+                {/* ... Inputs (Unchanged) ... */}
                 <div className="col-span-1">
                     <label className="block text-[9px] md:text-[10px] text-gray-500 mb-0.5 md:mb-1 font-semibold">Tanggal</label>
                     <input type="date" value={weekForm.date} onChange={e => setWeekForm({...weekForm, date: e.target.value})} className={dateClass} style={{colorScheme: 'light'}} />
@@ -563,7 +468,22 @@ const InputSection: React.FC = () => {
                         <input type="text" inputMode="numeric" placeholder="0" value={weekForm.gross} onChange={e => setWeekForm({...weekForm, gross: formatNumberInput(e.target.value)})} className={inputRpClass} />
                     </div>
                 </div>
-                <div className="col-span-1 md:col-span-2 lg:col-span-1 flex items-end">
+
+                {/* READONLY FIELDS */}
+                <div className="col-span-1">
+                    <label className="block text-[9px] md:text-[10px] text-red-500 mb-0.5 md:mb-1 font-semibold">Potongan 5%</label>
+                    <input type="text" readOnly value={formatCurrency(calcCons)} className={`${inputReadonlyClass} bg-red-50 text-red-700`} />
+                </div>
+                <div className="col-span-1">
+                    <label className="block text-[9px] md:text-[10px] text-red-500 mb-0.5 md:mb-1 font-semibold">Potongan 10%</label>
+                    <input type="text" readOnly value={formatCurrency(calcComm)} className={`${inputReadonlyClass} bg-red-50 text-red-700`} />
+                </div>
+                 <div className="col-span-1">
+                    <label className="block text-[9px] md:text-[10px] text-emerald-700 mb-0.5 md:mb-1 font-bold">Hasil Bersih</label>
+                    <input type="text" readOnly value={formatCurrency(calcNet)} className={`${inputReadonlyClass} bg-emerald-50 text-emerald-800 font-bold border-emerald-200`} />
+                </div>
+
+                <div className="col-span-1 flex items-end">
                     <div className="flex gap-2 w-full">
                         {editingId && (
                             <button onClick={cancelEdit} className="w-1/3 bg-red-500 text-white py-1.5 md:py-2 rounded-lg font-bold text-[10px] md:text-xs flex items-center justify-center gap-1"><XCircle size={12} className="md:w-3.5 md:h-3.5"/> Batal</button>
@@ -575,27 +495,37 @@ const InputSection: React.FC = () => {
                 </div>
             </div>
             
-            {/* Desktop Hybrid Table */}
+            {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-sm text-left">
+                <table className="w-full text-xs text-left">
                     <thead className="bg-gray-100 uppercase text-gray-700">
-                        <tr><th className="p-3">Status</th><th className="p-3">Minggu/RT</th><th className="p-3">Pemasukan Kotor</th><th className="p-3 text-red-500">5%</th><th className="p-3 text-red-500">10%</th><th className="p-3 text-green-700">Pendapatan Bersih</th><th className="p-3">Aksi</th></tr>
+                        <tr>
+                            <th className="p-2">Status</th>
+                            <th className="p-2">Tgl</th> 
+                            <th className="p-2">Minggu/RT</th>
+                            <th className="p-2">Pemasukan Kotor</th>
+                            <th className="p-2 text-red-500">5%</th>
+                            <th className="p-2 text-red-500">10%</th>
+                            <th className="p-2 text-green-700">Pendapatan Bersih</th>
+                            <th className="p-2">Aksi</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {allWeeklyData.map(d => (
                             <tr key={d.id} className={`border-b hover:bg-gray-50 ${editingId === d.id ? 'bg-blue-50' : ''}`}>
-                                <td className="p-3">{renderStatusBadge(d.source)}</td>
-                                <td className="p-3 font-medium">
-                                    <div className="font-bold text-gray-800">{d.week}</div>
-                                    <div className="text-xs text-gray-500">{d.rt}</div>
+                                <td className="p-2">{renderStatusBadge(d.source)}</td>
+                                <td className={`p-2 whitespace-nowrap ${d.source === 'staged' ? 'text-red-600 font-medium' : 'text-gray-700'}`}>{formatDateShort(d.date)}</td> 
+                                <td className="p-2 font-medium">
+                                    <div className={`${d.source === 'staged' ? 'text-red-600' : 'text-gray-800'}`}>{d.week}</div>
+                                    <div className={`text-[10px] font-bold ${d.source === 'staged' ? 'text-red-600' : 'text-emerald-600'}`}>{d.rt}</div>
                                 </td>
-                                <td className="p-3">{formatCurrency(d.grossAmount)}</td>
-                                <td className="p-3 text-red-500">-{formatCurrency(d.consumptionCut)}</td>
-                                <td className="p-3 text-red-500">-{formatCurrency(d.commissionCut)}</td>
-                                <td className="p-3 font-bold text-green-700">{formatCurrency(d.netAmount)}</td>
-                                <td className="p-3 flex gap-2">
-                                    <button onClick={() => handleEditWeek(d)} className="text-blue-600 bg-blue-50 p-2 rounded-full"><Pencil size={14}/></button>
-                                    <button onClick={() => confirmDelete(d.id, d.source, 'weekly')} className="text-red-600 bg-red-50 p-2 rounded-full"><Trash2 size={14}/></button>
+                                <td className="p-2">{formatCurrency(d.grossAmount)}</td>
+                                <td className="p-2 text-red-500">-{formatCurrency(d.consumptionCut)}</td>
+                                <td className="p-2 text-red-500">-{formatCurrency(d.commissionCut)}</td>
+                                <td className={`p-2 font-bold ${d.source === 'staged' ? 'text-red-600' : 'text-green-700'}`}>{formatCurrency(d.netAmount)}</td>
+                                <td className="p-1 text-center align-middle w-16">
+                                    {/* Desktop: Vertical */}
+                                    {getActionButtons(d, 'weekly', 'col')}
                                 </td>
                             </tr>
                         ))}
@@ -603,41 +533,77 @@ const InputSection: React.FC = () => {
                 </table>
             </div>
 
-            {/* Mobile Cards Hybrid */}
-            <div className="md:hidden space-y-1.5">
-               {allWeeklyData.map(d => (
-                 <div key={d.id} className={`border p-1.5 rounded-lg shadow-sm ${d.source === 'published' ? 'border-green-200 bg-white' : 'border-orange-200 bg-orange-50/30'}`}>
-                    <div className="flex justify-between items-center mb-1 pb-1 border-b border-gray-100">
-                        <div className="flex items-center gap-1.5">
-                             {renderStatusBadge(d.source)}
-                             <span className="font-bold text-gray-800 text-[9px]">{d.week}</span>
-                             <span className="bg-emerald-50 text-emerald-700 text-[8px] px-1 py-0.5 rounded border border-emerald-100">
-                                {d.rt} &nbsp; {formatDateShort(d.date)}
-                             </span>
-                        </div>
-                        <div className="flex gap-1.5">
-                            <button onClick={() => handleEditWeek(d)} className="text-blue-600 bg-blue-50 p-1 rounded"><Pencil size={12}/></button>
-                            <button onClick={() => confirmDelete(d.id, d.source, 'weekly')} className="text-red-600 bg-red-50 p-1 rounded"><Trash2 size={12}/></button>
-                        </div>
-                    </div>
-                    <div className="text-[9px] space-y-0.5">
-                        <div className="flex justify-between text-gray-600"><span>Pemasukan Kotor:</span><span className="font-medium">{formatCurrency(d.grossAmount)}</span></div>
-                        
-                        {/* Detail Potongan Di Kartu */}
-                        <div className="flex justify-between text-red-500"><span>Potongan 5%:</span><span>-{formatCurrency(d.consumptionCut)}</span></div>
-                        <div className="flex justify-between text-red-500"><span>Potongan 10%:</span><span>-{formatCurrency(d.commissionCut)}</span></div>
-
-                        <div className="flex justify-between font-bold text-primary border-t pt-0.5 mt-0.5"><span>Bersih:</span><span className="text-[10px]">{formatCurrency(d.netAmount)}</span></div>
-                    </div>
-                 </div>
-               ))}
+            {/* Mobile TABLE (Fixed Scroll) */}
+            <div className="md:hidden border rounded-lg overflow-hidden border-gray-200">
+               <div className="overflow-y-auto max-h-[350px] overflow-x-hidden relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                   <table className="w-full text-[7px] table-fixed relative border-collapse">
+                        <thead className="sticky top-0 z-10 bg-gray-100 shadow-sm text-gray-700 uppercase font-bold">
+                            <tr>
+                                <th className="w-[8%] py-2 text-center border-b border-r border-gray-200">No</th>
+                                <th className="w-[22%] py-2 text-center border-b border-r border-gray-200">Info</th>
+                                <th className="w-[50%] py-2 text-center px-1 border-b border-r border-gray-200">Pemasukan</th>
+                                <th className="w-[20%] py-2 text-center border-b border-gray-200">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {allWeeklyData.map((d, idx) => (
+                                <tr key={d.id} className={`${d.source === 'staged' ? 'bg-white' : 'bg-white'}`}>
+                                    <td className="py-2 text-center text-gray-500 align-middle border-r border-gray-100">{idx+1}</td>
+                                    
+                                    <td className="py-1 px-1 text-center align-middle border-r border-gray-100">
+                                        <div className="flex justify-center mb-1">{renderStatusBadge(d.source)}</div>
+                                        <div className={`${d.source === 'staged' ? 'text-red-600 font-bold' : 'text-blue-600 font-semibold'} mb-0.5`}>{formatDateShort(d.date)}</div>
+                                        <div className={`${d.source === 'staged' ? 'text-red-600' : 'text-gray-800'} leading-tight mb-0.5`}>{d.week}</div>
+                                        <div className="inline-block bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded text-[9px] font-bold border border-emerald-200">{d.rt}</div>
+                                    </td>
+                                    
+                                    <td className="py-2 px-2 align-middle border-r border-gray-100">
+                                        <div className="space-y-1 text-[8px]">
+                                            <div className="flex justify-between items-center text-gray-600">
+                                                <span>Kotor</span>
+                                                <span className="font-medium">: {formatCurrency(d.grossAmount)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-red-500">
+                                                <span>Konsumsi 5%</span>
+                                                <span>: -{formatCurrency(d.consumptionCut)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-red-500">
+                                                <span>Komisi 10%</span>
+                                                <span>: -{formatCurrency(d.commissionCut)}</span>
+                                            </div>
+                                            <div className={`flex justify-between items-center font-bold px-1 rounded-sm py-0.5 border border-emerald-100 text-[8px] ${d.source === 'staged' ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'}`}>
+                                                <span>BERSIH</span>
+                                                <span>: {formatCurrency(d.netAmount)}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <td className="py-1 align-middle text-center"> 
+                                        {/* Mobile Weekly: Vertical looks better on side because row is tall */}
+                                        {getActionButtons(d, 'weekly', 'col')}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        <tfoot className="sticky bottom-0 z-10 bg-gray-50 border-t shadow-[0_-2px_4px_rgba(0,0,0,0.05)] font-bold">
+                            <tr>
+                                <td colSpan={2} className="py-2 px-2 text-right text-gray-600 uppercase border-r border-gray-200">Total Bersih</td>
+                                <td className="py-2 px-2 text-right text-emerald-800 border-r border-gray-200 text-[10px]">
+                                    {formatCurrency(allWeeklyData.reduce((a,b) => a + b.netAmount, 0))}
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                   </table>
+               </div>
             </div>
           </div>
         )}
 
-        {/* === 3. DONOR FORM (FULL UI REVISED) === */}
+        {/* === 3. DONOR FORM === */}
         {activeTab === 'donor' && (
              <div className="space-y-2 md:space-y-6">
+             {/* ... Form Inputs (Unchanged) ... */}
              <div className={`grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-3 bg-gray-50 p-2 md:p-3 rounded-lg border ${editingId ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}>
                  <div className="col-span-1">
                     <label className="block text-[9px] md:text-[10px] text-gray-500 mb-0.5 md:mb-1 font-semibold">Tanggal</label>
@@ -667,7 +633,7 @@ const InputSection: React.FC = () => {
                  </div>
              </div>
  
-             {/* Desktop Table Hybrid */}
+             {/* Desktop Table */}
              <div className="hidden md:block">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-100 uppercase text-gray-700"><tr><th className="p-3">Status</th><th className="p-3">Tgl</th><th className="p-3">Sumber Dana</th><th className="p-3">Nominal</th><th className="p-3">Aksi</th></tr></thead>
@@ -675,12 +641,12 @@ const InputSection: React.FC = () => {
                         {allDonors.map((d: any) => (
                             <tr key={d.id} className={`border-b ${editingId === d.id ? 'bg-blue-50' : ''}`}>
                                 <td className="p-3">{renderStatusBadge(d.source)}</td>
-                                <td className="p-3">{formatDate(d.date)}</td>
-                                <td className="p-3 font-semibold">{d.name}</td>
-                                <td className="p-3 font-bold text-blue-700">{formatCurrency(d.nominal)}</td>
-                                <td className="p-3 flex gap-2">
-                                    <button onClick={() => handleEditDonor(d)} className="text-blue-600 bg-blue-50 p-2 rounded-full"><Pencil size={14}/></button>
-                                    <button onClick={() => confirmDelete(d.id, d.source, 'donor')} className="text-red-600 bg-red-50 p-2 rounded-full"><Trash2 size={14}/></button>
+                                <td className={`p-3 ${d.source === 'staged' ? 'text-red-600 font-medium' : 'text-gray-700'}`}>{formatDate(d.date)}</td>
+                                <td className={`p-3 font-semibold ${d.source === 'staged' ? 'text-red-600' : 'text-gray-800'}`}>{d.name}</td>
+                                <td className={`p-3 font-bold ${d.source === 'staged' ? 'text-red-600' : 'text-blue-700'}`}>{formatCurrency(d.nominal)}</td>
+                                <td className="p-1 text-center align-middle w-16">
+                                    {/* Desktop: Vertical */}
+                                    {getActionButtons(d, 'donor', 'col')}
                                 </td>
                             </tr>
                         ))}
@@ -688,33 +654,60 @@ const InputSection: React.FC = () => {
                 </table>
              </div>
 
-             {/* Mobile Cards Hybrid (COMPACT & SMALLER FONT) */}
-             <div className="md:hidden space-y-1.5">
-               {allDonors.map((d: any) => (
-                 <div key={d.id} className={`border p-1.5 rounded-lg shadow-sm ${d.source === 'published' ? 'border-green-200 bg-white' : 'border-orange-200 bg-orange-50/30'}`}>
-                    <div className="flex justify-between items-start mb-0.5">
-                        <div>
-                             <div className="flex gap-2 items-center mb-0.5">{renderStatusBadge(d.source)}</div>
-                             <h4 className="font-bold text-gray-800 text-[10px] leading-tight">{d.name}</h4>
-                             <p className="text-[9px] text-gray-500">{formatDate(d.date)}</p>
-                        </div>
-                        <div className="flex gap-1.5">
-                            <button onClick={() => handleEditDonor(d)} className="text-blue-600 bg-blue-50 p-1 rounded-lg"><Pencil size={12}/></button>
-                            <button onClick={() => confirmDelete(d.id, d.source, 'donor')} className="text-red-600 bg-red-50 p-1 rounded-lg"><Trash2 size={12}/></button>
-                        </div>
-                    </div>
-                    <div className="flex justify-end items-center mt-0.5 pt-0.5 border-t border-gray-100">
-                         <span className="font-bold text-blue-600 text-[10px]">{formatCurrency(d.nominal)}</span>
-                    </div>
-                 </div>
-               ))}
+             {/* Mobile TABLE (Fixed Scroll) 7px Font */}
+             <div className="md:hidden border rounded-lg overflow-hidden border-gray-200">
+               <div className="overflow-y-auto max-h-[300px] overflow-x-hidden relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                   <table className="w-full text-[7px] table-fixed relative border-collapse">
+                        <thead className="sticky top-0 z-10 bg-gray-100 shadow-sm text-gray-700 uppercase font-bold">
+                            <tr>
+                                <th className="w-[10%] py-2 text-center border-b border-r border-gray-200">No</th>
+                                <th className="w-[20%] py-2 text-center border-b border-r border-gray-200">Tgl</th>
+                                <th className="w-[35%] py-2 text-left px-1 border-b border-r border-gray-200">Nama</th>
+                                <th className="w-[20%] py-2 text-right px-1 border-b border-r border-gray-200">Nominal</th>
+                                <th className="w-[15%] py-2 text-center border-b border-gray-200">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {allDonors.map((d, idx) => (
+                                <tr key={d.id} className={`border-b border-gray-50 ${d.source === 'staged' ? 'bg-white' : 'bg-white'}`}>
+                                    <td className="py-2 text-center text-gray-500 align-top border-r border-gray-100">{idx+1}</td>
+                                    
+                                    <td className="py-2 text-center align-top border-r border-gray-100">
+                                        {/* Added Status Badge in Mobile View */}
+                                        <div className="flex justify-center mb-1">{renderStatusBadge(d.source)}</div>
+                                        <div className={`leading-tight ${d.source === 'staged' ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
+                                            {formatDateShort(d.date)}
+                                        </div>
+                                    </td>
+
+                                    <td className={`py-2 px-1 leading-tight align-top truncate border-r border-gray-100 ${d.source === 'staged' ? 'text-red-600' : 'text-gray-800'}`}>{d.name}</td>
+                                    <td className={`py-2 px-1 text-right font-bold align-top border-r border-gray-100 ${d.source === 'staged' ? 'text-red-600' : 'text-blue-700'}`}>{formatCurrency(d.nominal)}</td>
+                                    <td className="py-1 flex justify-center items-center align-top">
+                                        {/* Mobile: Horizontal (Row) requested */}
+                                        {getActionButtons(d, 'donor', 'row')}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        <tfoot className="sticky bottom-0 z-10 bg-gray-50 border-t shadow-[0_-2px_4px_rgba(0,0,0,0.05)] font-bold">
+                            <tr>
+                                <td colSpan={3} className="py-2 px-2 text-right text-gray-600 uppercase border-r border-gray-200">Total</td>
+                                <td className="py-2 px-2 text-right text-blue-800 border-r border-gray-200">
+                                    {formatCurrency(allDonors.reduce((a,b) => a + b.nominal, 0))}
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                   </table>
+               </div>
             </div>
            </div>
         )}
 
-        {/* === 4. EXPENSE FORM (FULL UI REVISED) === */}
+        {/* === 4. EXPENSE FORM === */}
         {activeTab === 'expense' && (
              <div className="space-y-2 md:space-y-6">
+             {/* ... Form Inputs (Unchanged) ... */}
              <div className={`grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-3 bg-gray-50 p-2 md:p-3 rounded-lg border ${editingId ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}>
                  <div className="col-span-1">
                     <label className="block text-[9px] md:text-[10px] text-gray-500 mb-0.5 md:mb-1 font-semibold">Tanggal</label>
@@ -745,7 +738,7 @@ const InputSection: React.FC = () => {
                  </div>
              </div>
  
-             {/* Desktop Table Hybrid */}
+             {/* Desktop Table */}
              <div className="hidden md:block">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-100 uppercase text-gray-700"><tr><th className="p-3">Status</th><th className="p-3">Tgl</th><th className="p-3">Keperluan</th><th className="p-3">Nominal</th><th className="p-3">Aksi</th></tr></thead>
@@ -753,12 +746,12 @@ const InputSection: React.FC = () => {
                         {allExpenses.map((d: any) => (
                             <tr key={d.id} className={`border-b ${editingId === d.id ? 'bg-blue-50' : ''}`}>
                                 <td className="p-3">{renderStatusBadge(d.source)}</td>
-                                <td className="p-3">{formatDate(d.date)}</td>
-                                <td className="p-3">{d.purpose}</td>
-                                <td className="p-3 font-bold text-red-600">{formatCurrency(d.nominal)}</td>
-                                <td className="p-3 flex gap-2">
-                                    <button onClick={() => handleEditExp(d)} className="text-blue-600 bg-blue-50 p-2 rounded-full"><Pencil size={14}/></button>
-                                    <button onClick={() => confirmDelete(d.id, d.source, 'expense')} className="text-red-600 bg-red-50 p-2 rounded-full"><Trash2 size={16}/></button>
+                                <td className={`p-3 ${d.source === 'staged' ? 'text-red-600 font-medium' : 'text-gray-700'}`}>{formatDate(d.date)}</td>
+                                <td className={`p-3 ${d.source === 'staged' ? 'text-red-600' : 'text-gray-800'}`}>{d.purpose}</td>
+                                <td className={`p-3 font-bold ${d.source === 'staged' ? 'text-red-600' : 'text-red-600'}`}>{formatCurrency(d.nominal)}</td>
+                                <td className="p-1 text-center align-middle w-16"> 
+                                    {/* Desktop: Vertical */}
+                                    {getActionButtons(d, 'expense', 'col')}
                                 </td>
                             </tr>
                         ))}
@@ -766,26 +759,50 @@ const InputSection: React.FC = () => {
                 </table>
              </div>
 
-             {/* Mobile Cards Hybrid (COMPACT & SMALLER FONT) */}
-             <div className="md:hidden space-y-1.5">
-               {allExpenses.map((d: any) => (
-                 <div key={d.id} className={`border border-gray-200 p-1.5 rounded-lg shadow-sm border-l-4 border-l-red-500 ${d.source === 'published' ? 'bg-white' : 'bg-orange-50/30'}`}>
-                    <div className="flex justify-between items-start">
-                        <div>
-                             <div className="flex gap-2 items-center mb-0.5">{renderStatusBadge(d.source)}</div>
-                             <h4 className="font-bold text-gray-800 text-[10px] leading-tight">{d.purpose}</h4>
-                             <p className="text-[9px] text-gray-500 mt-0.5">{formatDate(d.date)}</p>
-                        </div>
-                        <div className="flex gap-1.5">
-                            <button onClick={() => handleEditExp(d)} className="text-blue-600 bg-blue-50 p-1 rounded-lg ml-2"><Pencil size={12}/></button>
-                            <button onClick={() => confirmDelete(d.id, d.source, 'expense')} className="text-red-600 bg-red-50 p-1 rounded-lg flex-shrink-0 ml-1"><Trash2 size={12}/></button>
-                        </div>
-                    </div>
-                    <div className="text-right mt-0.5 font-bold text-red-600 text-[10px]">
-                        {formatCurrency(d.nominal)}
-                    </div>
-                 </div>
-               ))}
+             {/* Mobile TABLE (Fixed Scroll) 7px Font */}
+             <div className="md:hidden border rounded-lg overflow-hidden border-gray-200">
+               <div className="overflow-y-auto max-h-[300px] overflow-x-hidden relative [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                   <table className="w-full text-[7px] table-fixed relative border-collapse">
+                        <thead className="sticky top-0 z-10 bg-gray-100 shadow-sm text-gray-700 uppercase font-bold">
+                            <tr>
+                                <th className="w-[10%] py-2 text-center border-b border-r border-gray-200">No</th>
+                                <th className="w-[20%] py-2 text-center border-b border-r border-gray-200">Tgl</th>
+                                <th className="w-[30%] py-2 text-left px-1 border-b border-r border-gray-200">Keperluan</th>
+                                <th className="w-[25%] py-2 text-right px-1 border-b border-r border-gray-200">Nominal</th>
+                                <th className="w-[15%] py-2 text-center border-b border-gray-200">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {allExpenses.map((d, idx) => (
+                                <tr key={d.id} className={`border-b border-gray-50 ${d.source === 'staged' ? 'bg-white' : 'bg-white'}`}>
+                                    <td className="py-2 text-center text-gray-500 align-top border-r border-gray-100">{idx+1}</td>
+                                    <td className="py-2 text-center align-top border-r border-gray-100">
+                                        {/* Added Status Badge in Mobile View */}
+                                        <div className="flex justify-center mb-1">{renderStatusBadge(d.source)}</div>
+                                        <div className={`leading-tight ${d.source === 'staged' ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
+                                            {formatDateShort(d.date)}
+                                        </div>
+                                    </td>
+                                    <td className={`py-2 px-1 text-gray-800 leading-tight align-top truncate border-r border-gray-100 ${d.source === 'staged' ? 'text-red-600' : 'text-gray-800'}`}>{d.purpose}</td>
+                                    <td className={`py-2 px-1 text-right font-bold align-top border-r border-gray-100 ${d.source === 'staged' ? 'text-red-600' : 'text-red-600'}`}>{formatCurrency(d.nominal)}</td>
+                                    <td className="py-1 flex justify-center items-center align-top"> 
+                                        {/* Mobile: Horizontal (Row) requested */}
+                                        {getActionButtons(d, 'expense', 'row')}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        <tfoot className="sticky bottom-0 z-10 bg-gray-50 border-t shadow-[0_-2px_4px_rgba(0,0,0,0.05)] font-bold">
+                            <tr>
+                                <td colSpan={3} className="py-2 px-2 text-right text-gray-600 uppercase border-r border-gray-200">Total</td>
+                                <td className="py-2 px-2 text-right text-red-800 border-r border-gray-200">
+                                    {formatCurrency(allExpenses.reduce((a,b) => a + b.nominal, 0))}
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                   </table>
+               </div>
             </div>
            </div>
         )}

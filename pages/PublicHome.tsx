@@ -18,6 +18,13 @@ const PublicHome: React.FC = () => {
   const bcaLogoUrl = "https://bmcenhkcwuxnclmlcriy.supabase.co/storage/v1/object/sign/image/BCA%20icon.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iODZjZjM2NS1mNTBmLTQwMmQtYjUwMC00Mjg3YjVlYTgxYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9CQ0EgaWNvbi5wbmciLCJpYXQiOjE3Njg1NDg3NjUsImV4cCI6MTgwMDA4NDc2NX0.D0kVRrFXun72PZeP3Uxvdk-uwC3IjiL5eH30JstwMrY";
   const waLogoUrl = "https://bmcenhkcwuxnclmlcriy.supabase.co/storage/v1/object/sign/image/WhatsApp_icon.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iODZjZjM2NS1mNTBmLTQwMmQtYjUwMC00Mjg3YjVlYTgxYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS9XaGF0c0FwcF9pY29uLnBuZyIsImlhdCI6MTc2ODU0ODQ4NywiZXhwIjoxODAwMDg0NDg3fQ.7Jb2tyrgNr5wSEX1yz-ByWL3RMQqdlQk0-kqUlc1B6I";
 
+  // --- SORTING HELPERS (Tanggal Kecil di Atas) ---
+  const sortByDateAsc = (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime();
+
+  // Create Sorted Copies for Display
+  const sortedDonors = [...publishedData.donors].sort(sortByDateAsc);
+  const sortedExpenses = [...publishedData.expenses].sort(sortByDateAsc);
+
   // Calculations (Global Totals)
   const totalPrevious = publishedData.previousFunds.reduce((acc, curr) => acc + curr.nominal, 0);
   const totalWeekly = publishedData.weeklyData.reduce((acc, curr) => acc + curr.netAmount, 0);
@@ -367,10 +374,10 @@ const PublicHome: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {publishedData.donors.length === 0 ? (
+                  {sortedDonors.length === 0 ? (
                     <tr><td colSpan={4} className="px-3 py-6 text-center text-gray-400 italic">Belum ada data pemasukan proposal</td></tr>
                   ) : (
-                    publishedData.donors.map((item, idx) => (
+                    sortedDonors.map((item, idx) => (
                       <tr key={item.id} className="hover:bg-blue-50/30 transition">
                         {/* Compact Padding Body - NO/DATE CENTER, NAME LEFT, NOMINAL RIGHT */}
                         <td className="px-3 py-2 text-center text-gray-500 font-mono">{idx + 1}</td>
@@ -407,10 +414,10 @@ const PublicHome: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {publishedData.donors.length === 0 ? (
+                        {sortedDonors.length === 0 ? (
                             <tr><td colSpan={4} className="py-4 text-center text-gray-400 italic">Belum ada data</td></tr>
                         ) : (
-                            publishedData.donors.map((item, idx) => (
+                            sortedDonors.map((item, idx) => (
                                 <tr key={item.id} className="odd:bg-white even:bg-gray-50">
                                     <td className="py-1.5 text-center text-gray-500 font-mono align-top border-r border-gray-100">{idx + 1}</td>
                                     {/* USE formatDateShort for Mobile */}
@@ -427,7 +434,7 @@ const PublicHome: React.FC = () => {
                             ))
                         )}
                     </tbody>
-                    {publishedData.donors.length > 0 && (
+                    {sortedDonors.length > 0 && (
                         <tfoot className="bg-blue-50 font-bold border-t border-blue-100 sticky bottom-0 z-20 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
                             <tr>
                                 <td colSpan={3} className="px-1 py-1.5 text-right text-blue-900 uppercase text-[9px] bg-blue-50">Total</td>
@@ -465,10 +472,10 @@ const PublicHome: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {publishedData.expenses.length === 0 ? (
+                  {sortedExpenses.length === 0 ? (
                     <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400 italic">Belum ada data pengeluaran</td></tr>
                   ) : (
-                    publishedData.expenses.map((item, idx) => (
+                    sortedExpenses.map((item, idx) => (
                       <tr key={item.id} className="hover:bg-red-50/30 transition">
                         {/* Compact Padding Body - NO/DATE CENTER, PURPOSE LEFT, NOMINAL RIGHT */}
                         <td className="px-3 py-2 text-center text-gray-500 font-mono">{idx + 1}</td>
@@ -505,10 +512,10 @@ const PublicHome: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {publishedData.expenses.length === 0 ? (
+                        {sortedExpenses.length === 0 ? (
                             <tr><td colSpan={4} className="py-4 text-center text-gray-400 italic">Belum ada data</td></tr>
                         ) : (
-                            publishedData.expenses.map((item, idx) => (
+                            sortedExpenses.map((item, idx) => (
                                 <tr key={item.id} className="odd:bg-white even:bg-gray-50">
                                     <td className="py-1.5 text-center text-gray-500 font-mono align-top border-r border-gray-100">{idx + 1}</td>
                                     {/* USE formatDateShort for Mobile */}
@@ -525,7 +532,7 @@ const PublicHome: React.FC = () => {
                             ))
                         )}
                     </tbody>
-                    {publishedData.expenses.length > 0 && (
+                    {sortedExpenses.length > 0 && (
                         <tfoot className="bg-red-50 font-bold border-t border-red-100 sticky bottom-0 z-20 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
                             <tr>
                                 <td colSpan={3} className="px-1 py-1.5 text-right text-red-900 uppercase text-[9px] bg-red-50">Total</td>

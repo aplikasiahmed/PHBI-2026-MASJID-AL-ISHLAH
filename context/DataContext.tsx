@@ -158,7 +158,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             icon: 'error',
             title: 'Gagal Mengambil Data',
             text: 'Terjadi kendala saat sinkronisasi data.',
-            footer: error.message
+            footer: error?.message || 'Unknown error'
           });
       } else {
          Swal.close();
@@ -454,7 +454,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return true;
       } catch (error: any) {
           console.error("Update DB Error", error);
-          Swal.fire('Gagal Update', error.message, 'error');
+          Swal.fire('Gagal Update', error?.message || 'Terjadi kesalahan pada database', 'error');
           return false;
       }
   };
@@ -467,7 +467,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return true;
       } catch (error: any) {
           console.error("Delete Database Error", error);
-          Swal.fire('Gagal Hapus', error.message, 'error');
+          Swal.fire('Gagal Hapus', error?.message || 'Terjadi kesalahan saat menghapus', 'error');
           return false;
       }
   };
@@ -559,7 +559,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       Swal.fire({
         icon: 'error',
         title: 'Gagal Memproses',
-        text: error.message || 'Terjadi kesalahan koneksi.',
+        text: error?.message || 'Terjadi kesalahan koneksi.',
       });
     }
   };
@@ -612,7 +612,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         Swal.fire('Berhasil', 'Database telah direset/dihapus.', 'success');
     } catch (error: any) {
         console.error(error);
-        Swal.fire('Error', 'Gagal mereset database: ' + error.message, 'error');
+        Swal.fire('Error', 'Gagal mereset database: ' + (error?.message || 'Error tidak diketahui'), 'error');
     }
   };
 

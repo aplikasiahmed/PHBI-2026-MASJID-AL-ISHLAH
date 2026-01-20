@@ -57,6 +57,16 @@ const InputSection: React.FC = () => {
     const rawValue = valString.replace(/\D/g, ''); 
     return new Intl.NumberFormat('id-ID').format(Number(rawValue));
   };
+  
+  // Helper: Format Tanggal Pendek (00/00/0000)
+  const formatDateShort = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   const parseNumberInput = (value: string) => {
     if (!value) return 0;
@@ -601,7 +611,9 @@ const InputSection: React.FC = () => {
                         <div className="flex items-center gap-1.5">
                              {renderStatusBadge(d.source)}
                              <span className="font-bold text-gray-800 text-[9px]">{d.week}</span>
-                             <span className="bg-emerald-50 text-emerald-700 text-[8px] px-1 py-0.5 rounded border border-emerald-100">{d.rt}</span>
+                             <span className="bg-emerald-50 text-emerald-700 text-[8px] px-1 py-0.5 rounded border border-emerald-100">
+                                {d.rt} &nbsp; {formatDateShort(d.date)}
+                             </span>
                         </div>
                         <div className="flex gap-1.5">
                             <button onClick={() => handleEditWeek(d)} className="text-blue-600 bg-blue-50 p-1 rounded"><Pencil size={12}/></button>

@@ -180,7 +180,7 @@ const PublicHome: React.FC = () => {
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm md:max-w-md overflow-hidden animate-fade-in-up">
               <div className="bg-primary p-3 md:p-4 flex justify-between items-center text-white">
                 <h3 className="font-serif font-bold text-sm md:text-lg">Rincian Total Pemasukan</h3>
-                <button onClick={() => setActiveDetail(null)} className="hover:bg-emerald-800 p-1 rounded-full transition"><X size={18} /></button>
+                <button onClick={() => setActiveDetail(null)} className=" font-bold hover:bg-red-500 p-1 rounded-full transition"><X size={18} /></button>
               </div>
               <div className="p-3 md:p-5 space-y-2 md:space-y-3 text-xs md:text-sm">
                 <div className="flex justify-between border-b border-gray-100 pb-1.5 md:pb-2">

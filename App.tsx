@@ -143,7 +143,7 @@ const MainContent: React.FC = () => {
                   <button 
                     onClick={() => setIsLoginModalOpen(false)}
                     // Tombol Batal diperkecil paddingnya
-                    className="flex-1 bg-red-500 text-gray-700 py-1.5 md:py-3 rounded-lg hover:bg-gray-200 font-bold border border-gray-300 transition text-xs md:text-sm"
+                    className="flex-1 bg-red-500 hover:bg-red-700 text-white py-1.5 md:py-3 rounded-lg font-bold shadow-md transition flex items-center justify-center gap-1.5 text-xs md:text-sm"
                     disabled={isLoading}
                   >
                     Batal

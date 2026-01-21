@@ -26,7 +26,7 @@ const PreviewSection: React.FC = () => {
   };
 
   const handlePublish = () => {
-    // 2. Validasi Ketersediaan Data
+    // Validasi Ketersediaan Data
     const hasData = 
         stagedData.previousFunds.length > 0 || 
         stagedData.weeklyData.length > 0 || 
@@ -43,7 +43,7 @@ const PreviewSection: React.FC = () => {
         return;
     }
 
-    // 3. Konfirmasi Eksekusi
+    // Konfirmasi Eksekusi
     Swal.fire({
       title: 'Publikasikan Data?',
       text: "Data beserta Waktu Update saat ini akan ditampilkan ke Publik.",
@@ -55,7 +55,6 @@ const PreviewSection: React.FC = () => {
       cancelButtonText: 'Batal'
     }).then((result) => {
       if (result.isConfirmed) {
-        // Kirim format ISO String lengkap (Tanggal + Jam)
         publishData(currentDate.toISOString());
       }
     });
@@ -77,16 +76,16 @@ const PreviewSection: React.FC = () => {
         </div>
         
         <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 w-full md:w-auto">
-             {/* Date Display (Realtime Clock) */}
-             <div className="w-full md:w-auto">
+             {/* Date Display (Realtime Clock) - REVISED WIDTH: md:w-72 */}
+             <div className="w-full md:w-72 flex-shrink-0">
                  <label className="block text-[9px] md:text-xs font-bold text-gray-600 mb-0.5 md:mb-1 flex items-center gap-1">
                     <Clock size={10} className="text-gray-500"/> Tanggal & Waktu Update Realtime
                  </label>
                  <input 
                     type="text" 
-                    value={getDisplayTime()} // Menampilkan Tanggal + "Waktu : HH:mm:ss"
+                    value={getDisplayTime()} 
                     readOnly
-                    className="w-full bg-gray-100 border border-gray-300 rounded px-2 py-0 md:px-3 md:py-2 text-[10px] md:text-sm text-gray-600 font-bold cursor-not-allowed focus:outline-none h-[28px] md:h-auto leading-none appearance-none"
+                    className="w-full bg-gray-100 border border-gray-300 rounded px-2 py-0 md:px-4 md:py-2 text-[10px] md:text-sm text-gray-600 font-bold cursor-not-allowed focus:outline-none h-[28px] md:h-auto leading-none appearance-none shadow-inner"
                  />
              </div>
 
@@ -98,7 +97,7 @@ const PreviewSection: React.FC = () => {
             </button>
         </div>
       </div>
-
+      {/* ... sisanya tetap sama ... */}
       <div className="grid grid-cols-2 gap-2 md:gap-6">
         <div className="bg-emerald-50 p-2 md:p-4 rounded-lg border border-emerald-200">
             <h3 className="font-bold text-emerald-800 text-[9px] md:text-base uppercase tracking-wider">Total Pemasukan (Draft)</h3>
@@ -110,7 +109,6 @@ const PreviewSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Tables Preview - Simplified view */}
       <div className="space-y-2 md:space-y-4">
         <h3 className="font-bold text-gray-700 text-[10px] md:text-base">Ringkasan Item Belum Dipublikasi</h3>
         
@@ -176,9 +174,7 @@ const PreviewSection: React.FC = () => {
                 <p className="text-[10px] md:text-base">Tidak ada data baru untuk dipublikasikan.</p>
             </div>
         )}
-
       </div>
-
     </div>
   );
 };

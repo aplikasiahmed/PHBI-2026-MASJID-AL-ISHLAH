@@ -13,10 +13,12 @@ interface SummaryCardProps {
 const SummaryCard: React.FC<SummaryCardProps> = ({ title, amount, type, subtitle, onDetailClick }) => {
   // Menggunakan warna spesifik untuk Ikon agar serasi dengan teks nominal
   const getIcon = () => {
+    // REVISI: Ukuran ikon disamakan (w-7 h-7 md:w-10 md:h-10) agar ideal
+    const iconClass = "w-7 h-7 md:w-10 md:h-10";
     switch (type) {
-      case 'income': return <ArrowUpCircle className="w-6 h-6 md:w-8 md:h-8 text-[#018f22]" />;
-      case 'expense': return <ArrowDownCircle className="w-6 h-6 md:w-8 md:h-8 text-[#c91400]" />;
-      default: return <Wallet className="w-6 h-6 md:w-8 md:h-8 text-[#0229e8]" />;
+      case 'income': return <ArrowUpCircle className={`${iconClass} text-[#018f22]`} />;
+      case 'expense': return <ArrowDownCircle className={`${iconClass} text-[#c91400]`} />;
+      default: return <Wallet className={`${iconClass} text-[#0229e8]`} />;
     }
   };
 
@@ -45,7 +47,6 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ title, amount, type, subtitle
           {/* Implementasi warna font dinamis */}
           <h3 className={`text-xl md:text-3xl font-bold mt-1 md:mt-2 ${getAmountColor()}`}>{formatCurrency(amount)}</h3>
           {subtitle && (
-            // REVISI: Ukuran font diperkecil (text-[8px] md:text-[10px]) agar lebih kecil dari sebelumnya
             <p className="text-[8px] md:text-[10px] text-gray-500 mt-0.5 md:mt-1 font-medium italic">{subtitle}</p>
           )}
         </div>

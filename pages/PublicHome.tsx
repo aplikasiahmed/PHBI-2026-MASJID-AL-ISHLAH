@@ -335,13 +335,10 @@ const PublicHome: React.FC = () => {
                 {/* TOTAL BERSIH (Mobile Footer) */}
                 <div className="bg-gradient-to-r from-primary to-emerald-800 text-white p-2 rounded-lg shadow-lg mt-10 sticky bottom-4 z-10 border border-gold/30">
                     <div className="flex justify-between items-center mb-1.5">
-                        <span className="font-bold text-[9px] uppercase tracking-wider opacity-90">
-                           Total Pendapatan Bersih
+                        <span className="font-bold text-[8px] uppercase tracking-wider opacity-90">
+                           Total {selectedWeek === 'all' ? 'dari Semua Minggu' : `dari ${selectedWeek}`}
                         </span>
                         <span className="font-bold text-yellow-300 text-sm text-gold">{formatCurrency(totalNetWeek)}</span>
-                    </div>
-                    <div className="text-[8px] text-emerald-200 text-right italic leading-none">
-                        {selectedWeek === 'all' ? '*dari Semua Minggu' : `*dari ${selectedWeek}`}
                     </div>
                 </div>
                 </>

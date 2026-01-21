@@ -45,7 +45,7 @@ const MainContent: React.FC = () => {
         // 3. Ucapan Selamat Datang
         Swal.fire({
           icon: 'success',
-          title: `Selamat Datang, ${username}!`,
+          title: `Selamat Datang, ${username}`,
           text: 'Anda berhasil masuk ke Dashboard Admin.',
           showConfirmButton: false,
           timer: 3000

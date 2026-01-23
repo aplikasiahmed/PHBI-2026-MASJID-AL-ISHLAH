@@ -96,7 +96,7 @@ const UserManagementSection: React.FC = () => {
             <span>Kelola Admin</span>
         </h2>
         <p className="text-[9px] md:text-sm text-gray-500 mt-0.5 leading-tight">
-            Tambahkan akun pengurus untuk akses dashboard.
+            Tambahkan akun pantia untuk sebagai admin.
         </p>
       </div>
 

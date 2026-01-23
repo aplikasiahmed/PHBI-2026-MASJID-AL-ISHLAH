@@ -21,7 +21,7 @@ const ReportSection: React.FC = () => {
     <div className="space-y-3 md:space-y-6">
        <div className="border-b pb-2">
            <h2 className="text-sm md:text-2xl font-bold text-gray-800">Laporan Keuangan (Arsip)</h2>
-           <p className="text-[10px] md:text-base text-gray-600 mt-0.5">Unduh laporan dalam format PDF atau Excel berdasarkan data yang sudah dipublikasikan.</p>
+           <p className="text-[10px] md:text-base text-gray-600 mt-0.5">Unduh laporan dalam format PDF atau Excel</p>
        </div>
 
        <div className="space-y-2 md:space-y-3">

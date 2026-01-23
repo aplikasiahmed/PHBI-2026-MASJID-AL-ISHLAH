@@ -65,6 +65,8 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
   });
 
   const updateDateStr = `(Update: ${formatDateTime(data.lastUpdated)}) `;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
   // --- SORTING HELPER (Tanggal Kecil di Atas / Ascending) ---
   const sortByDateAsc = (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -413,11 +415,58 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         }
     });
 
-    const finalY = (doc as any).lastAutoTable?.finalY;
-    if (finalY) {
+    const finalYTable = (doc as any).lastAutoTable?.finalY;
+    if (finalYTable) {
         const textTerbilang = terbilang(balance);
         doc.setFontSize(9); doc.setFont("helvetica", "italic"); doc.setTextColor(0, 0, 0);
-        doc.text(`Terbilang : ${textTerbilang} Rupiah`, 196, finalY + 6, { align: 'right' }); 
+        doc.text(`Terbilang : ${textTerbilang} Rupiah`, 196, finalYTable + 6, { align: 'right' }); 
+        
+        // --- TAMBAHAN TANDA TANGAN ---
+        let sigY = finalYTable + 25;
+        if (sigY + 50 > 320) {
+            doc.addPage();
+            sigY = 50;
+        }
+
+        const col1 = 45;
+        const col2 = 105;
+        const col3 = 165;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`Tangerang, ${dateStr}`, col3, sigY - 8, { align: 'center' });
+
+        // Row 1 Title
+        doc.text("Wakil Ketua,", col1, sigY, { align: 'center' });
+        doc.text("Sekertaris,", col2, sigY, { align: 'center' });
+        doc.text("Bendahara,", col3, sigY, { align: 'center' });
+
+        // Row 1 Name
+        sigY += 22;
+        doc.setFont("helvetica", "bold");
+        doc.text("AHMAD FARHAN", col1, sigY, { align: 'center' });
+        doc.text("AHMAD NAWASYI", col2, sigY, { align: 'center' });
+        doc.text("MAHENDRA", col3, sigY, { align: 'center' });
+        
+
+        // Mengetahui
+        sigY += 10;
+        doc.setFont("helvetica", "normal");
+        doc.text("Mengetahui,", col2, sigY, { align: 'center' });
+
+        // Row 2 Title
+        sigY += 8;
+        doc.text("Ketua DKM Al-Ishlah,", col1, sigY, { align: 'center' });
+        doc.text("Ketua RW. 04", col2, sigY, { align: 'center' });
+        doc.text("Ketua Pemuda,", col3, sigY, { align: 'center' });
+
+        // Row 2 Name
+        sigY += 22;
+        doc.setFont("helvetica", "bold");
+        doc.text("Ustd. MUHAMMAD ASMUR", col1, sigY, { align: 'center' });
+        doc.text("MUHAMMAD ROMLI", col2, sigY, { align: 'center' });
+        doc.text("USUP BIN H. USAN", col3, sigY, { align: 'center' });
+
     }
 
   } else {
@@ -646,7 +695,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
     doc.setPage(i);
     printHeader(doc);
     doc.setFontSize(7); doc.setFont("helvetica", "italic"); doc.setTextColor(100);
-    const now = new Date(), dateStr = now.toLocaleDateString('id-ID'), timeStr = now.toLocaleTimeString('id-ID');
+    const nowLocal = new Date(), timeStr = nowLocal.toLocaleTimeString('id-ID');
     let footerLeftText = `didownload pada: ${dateStr}, Pukul : ${timeStr}`;
     if (type === 'accountability') {
         footerLeftText = `Laporan Pertanggung Jawaban Panitia PHBI 1448 H/2026 M | dibuat pada ${dateStr} pukul ${timeStr}`;

@@ -153,27 +153,54 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('phbi_staged_data', JSON.stringify(stagedData));
   }, [stagedData]);
 
+  // LOGIKA AUTO-LOGOUT (IDLE TIMEOUT) YANG DIPERBAIKI
   useEffect(() => {
     let idleTimer: ReturnType<typeof setTimeout>;
+
     const handleIdleLogout = () => {
-        if (isLoggedIn) {
-            logout();
-            Swal.fire({ icon: 'warning', title: 'Sesi Berakhir', text: 'Anda telah logout otomatis', timer: 2000, timerProgressBar: true, showConfirmButton: false, allowOutsideClick: false });
-        }
+      if (isLoggedIn) {
+        logout();
+        Swal.fire({ 
+          icon: 'warning', 
+          title: 'Sesi Berakhir', 
+          text: 'Anda telah keluar otomatis', 
+          timer: 2000, 
+          timerProgressBar: true, 
+          showConfirmButton: false, // Menghilangkan tombol konfirmasi
+          allowOutsideClick: false 
+        });
+      }
     };
+
     const resetTimer = () => {
-        if (!isLoggedIn) return; 
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(handleIdleLogout, IDLE_TIMEOUT_MS);
+      if (!isLoggedIn) return;
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(handleIdleLogout, IDLE_TIMEOUT_MS);
     };
+
     if (isLoggedIn) {
-        resetTimer();
-        const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
-        events.forEach(event => window.addEventListener(event, resetTimer));
-        return () => {
-            clearTimeout(idleTimer);
-            events.forEach(event => window.removeEventListener(event, resetTimer));
-        };
+      // Mulai timer saat pertama kali login
+      resetTimer();
+
+      // Daftar event yang dianggap sebagai aktivitas
+      const events = [
+        'mousedown', 'mousemove', 'keypress', 
+        'scroll', 'touchstart', 'click', 
+        'keydown', 'wheel'
+      ];
+
+      // Tambahkan listener ke level document agar lebih menyeluruh
+      events.forEach(event => {
+        document.addEventListener(event, resetTimer, { passive: true });
+      });
+
+      // Bersihkan listener dan timer saat unmount atau logout
+      return () => {
+        if (idleTimer) clearTimeout(idleTimer);
+        events.forEach(event => {
+          document.removeEventListener(event, resetTimer);
+        });
+      };
     }
   }, [isLoggedIn]);
 
@@ -353,13 +380,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           week: item.week,
           rt: item.rt,
           gross_amount: item.grossAmount,
+          // Fixed property names to match WeeklyData interface (consumptionCut and commissionCut)
           consumption_cut: item.consumptionCut,
           commission_cut: item.commissionCut,
           net_amount: item.netAmount,
           created_by: item.createdBy,
           edited_by: item.editedBy || null
         }));
-        const { error } = await supabase.from('Mingguan_data').insert(weeklyPayload);
+        const { error = null } = await supabase.from('Mingguan_data').insert(weeklyPayload);
         if (error) throw error;
       }
 

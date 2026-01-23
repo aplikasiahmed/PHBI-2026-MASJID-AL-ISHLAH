@@ -225,7 +225,7 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
             case 'weekly': return 'Laporan_PHBI_Mingguan_Per_RT';
             case 'donor': return 'Laporan_PHBI_Proposal_Amplop';
             case 'expense': return 'Laporan_PHBI_Pengeluaran';
-            case 'all_income': return 'Laporan_PHBI_Gabungan_Pemasukan';
+            case 'all_income': return 'Laporan_PHBI_Pemasukan_Gabungan';
             case 'accountability': return 'LAPORAN_PERTANGGUNG_JAWABAN_PHBI';
             default: return `Laporan_PHBI_${reportType}`;
         }

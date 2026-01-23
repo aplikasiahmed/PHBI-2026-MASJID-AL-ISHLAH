@@ -281,7 +281,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         },
         foot: [[
             { content: '', colSpan: 2 },
-            { content: 'TOTAL PEMASUKAN MINGGUAN ', styles: { halign: 'right'} },
+            { content: 'TOTAL ', styles: { halign: 'right'} },
             { content: formatCurrency(totalWeeklyNet), styles: { halign: 'right' } }
         ]]
      });
@@ -314,7 +314,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         },
         foot: [[
             { content: '', colSpan: 2 },
-            { content: 'TOTAL PEMASUKAN PROPOSAL/AMPLOP ', styles: { halign: 'right' } },
+            { content: 'TOTAL ', styles: { halign: 'right' } },
             { content: formatCurrency(data.donors.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
         ]]
      });
@@ -347,7 +347,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
         },
         foot: [[
             { content: '', colSpan: 2 },
-            { content: 'TOTAL DANA PENGELUARAN ', styles: { halign: 'right' } },
+            { content: 'TOTAL ', styles: { halign: 'right' } },
             { content: formatCurrency(data.expenses.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
         ]]
       });
@@ -496,7 +496,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
                 margin: tableMargin, 
                 foot: [[
                     { content: '', colSpan: 1, styles: { textColor: [0, 0, 0] }},
-                    { content: 'TOTAL SALDO AWAL ', styles: { halign: 'right'} },
+                    { content: 'SALDO AWAL ', styles: { halign: 'right'} },
                     { content: formatCurrency(data.previousFunds.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right', textColor: [0, 0, 0] } }
                 ]]
             });
@@ -603,7 +603,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
             columnStyles: { 0: { halign: 'center', cellWidth: 12 }, 1: { cellWidth: 28, halign: 'center' }, 3: { halign: 'right', cellWidth: 35 } },
             foot: [[
                 { content: '', colSpan: 2 },
-                { content: 'TOTAL PEMASUKAN PROPOSAL/AMPLOP ', styles: { halign: 'right' } }, 
+                { content: 'TOTAL ', styles: { halign: 'right' } }, 
                 { content: formatCurrency(data.donors.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
             ]]
         });
@@ -629,7 +629,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
             columnStyles: { 0: { halign: 'center', cellWidth: 12 }, 1: { cellWidth: 28, halign: 'center' }, 3: { halign: 'right', cellWidth: 35 } },
             foot: [[
                 { content: '', colSpan: 2 },
-                { content: 'TOTAL DANA PENGELUARAN ', styles: { halign: 'right' } },
+                { content: 'TOTAL ', styles: { halign: 'right' } },
                 { content: formatCurrency(data.expenses.reduce((a,b)=>a+b.nominal,0)), styles: { halign: 'right' } }
             ]]
         });
@@ -710,7 +710,7 @@ export const generatePDF = async (data: AppData, type: 'weekly' | 'donor' | 'exp
           case 'weekly': return 'Laporan_PHBI_Mingguan_Per_RT';
           case 'donor': return 'Laporan_PHBI_Proposal_Amplop';
           case 'expense': return 'Laporan_PHBI_Pengeluaran';
-          case 'all_income': return 'Laporan_PHBI_Gabungan_Pemasukan';
+          case 'all_income': return 'Laporan_PHBI_Pemasukan_Gabungan';
           case 'accountability': return 'LAPORAN_PERTANGGUNG_JAWABAN_PHBI';
           default: return `Laporan_PHBI_${reportType}`;
       }

@@ -1,3 +1,4 @@
+
 import * as XLSX from 'xlsx';
 import { AppData } from '../types';
 import { formatDate, formatDateTime } from './format';
@@ -89,8 +90,8 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
               formatDate(item.date),
               item.nominal
           ]);
-          const totalRow = ['', 'TOTAL', data.previousFunds.reduce((a,b)=>a+b.nominal,0)];
-          rows.push(totalRow);
+          const totalPrev = data.previousFunds.reduce((a,b)=>a+b.nominal,0);
+          rows.push(['', 'TOTAL SALDO AWAL', totalPrev]);
           addToSheet("Dana Awal", headers, rows);
       }
 
@@ -114,7 +115,7 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
         ]);
         
         const totalRow = [
-            'TOTAL', '', '',
+            'TOTAL PENDAPATAN BERSIH', '', '',
             data.weeklyData.reduce((a,b)=>a+b.grossAmount,0),
             data.weeklyData.reduce((a,b)=>a+b.consumptionCut,0),
             data.weeklyData.reduce((a,b)=>a+b.commissionCut,0),
@@ -172,8 +173,8 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
           item.nominal
         ]);
 
-        const totalRow = ['', '', 'TOTAL', data.donors.reduce((a,b)=>a+b.nominal,0)];
-        rows.push(totalRow);
+        const totalDonor = data.donors.reduce((a,b)=>a+b.nominal,0);
+        rows.push(['', '', 'TOTAL PEMASUKAN PROPOSAL/AMPLOP', totalDonor]);
 
         addToSheet("Donatur", headers, rows);
       }
@@ -190,8 +191,8 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
           item.nominal
         ]);
 
-        const totalRow = ['', '', 'TOTAL', data.expenses.reduce((a,b)=>a+b.nominal,0)];
-        rows.push(totalRow);
+        const totalExpense = data.expenses.reduce((a,b)=>a+b.nominal,0);
+        rows.push(['', '', 'TOTAL DANA PENGELUARAN', totalExpense]);
 
         addToSheet("Pengeluaran", headers, rows);
       }
@@ -217,8 +218,21 @@ export const generateExcel = (data: AppData, type: 'weekly' | 'donor' | 'expense
         addToSheet("Rekapitulasi", headers, rows);
       }
 
-      // Tulis File
-      XLSX.writeFile(wb, `Laporan_PHBI_${type}_${new Date().toISOString().slice(0,10)}.xlsx`);
+      // Helper for unified file naming
+      const getFileName = (reportType: string) => {
+        switch (reportType) {
+            case 'all_financial': return 'Laporan_PHBI_Rekapitulasi';
+            case 'weekly': return 'Laporan_PHBI_Mingguan_Per_RT';
+            case 'donor': return 'Laporan_PHBI_Proposal_Amplop';
+            case 'expense': return 'Laporan_PHBI_Pengeluaran';
+            case 'all_income': return 'Laporan_PHBI_Gabungan_Pemasukan';
+            case 'accountability': return 'LAPORAN_PERTANGGUNG_JAWABAN_PHBI';
+            default: return `Laporan_PHBI_${reportType}`;
+        }
+      };
+
+      const fileName = `${getFileName(type)}_${new Date().toISOString().slice(0,10)}.xlsx`;
+      XLSX.writeFile(wb, fileName);
   
   } catch (error: any) {
       console.error("Excel Error:", error);

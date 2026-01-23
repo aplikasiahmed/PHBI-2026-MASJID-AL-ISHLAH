@@ -236,7 +236,7 @@ const PublicHome: React.FC = () => {
                   onChange={(e) => setSelectedWeek(e.target.value)}
                   className="w-full md:w-56 appearance-none bg-white border border-emerald-200 text-gray-700 text-[8px] md:text-sm rounded-full pl-3 pr-8 py-1.5 md:py-2 focus:ring-1 focus:ring-primary focus:border-primary shadow-sm font-medium"
                 >
-                  <option value="all">Tampilkan Semua Minggu</option>
+                  <option value="all">Semua Minggu</option>
                   {weeks.map(w => <option key={w} value={w}>{w}</option>)}
                 </select>
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-emerald-600">

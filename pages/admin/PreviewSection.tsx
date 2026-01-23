@@ -46,7 +46,7 @@ const PreviewSection: React.FC = () => {
     // Konfirmasi Eksekusi
     Swal.fire({
       title: 'Publikasikan Data?',
-      text: "Data beserta Waktu Update saat ini akan ditampilkan ke Publik.",
+      text: "Yakin Data ditampilkan ke Publik.",
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#047857',

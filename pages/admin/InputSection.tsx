@@ -222,7 +222,7 @@ const InputSection: React.FC = () => {
         Swal.fire({
             icon: 'error',
             title: 'Data Duplikat!',
-            text: `Data untuk ${weekForm.week} dan ${weekForm.rt} sudah ada di draf atau database.`,
+            text: `Data untuk ${weekForm.week} dan ${weekForm.rt} sudah di input, coba cek kembali`,
             confirmButtonColor: '#d33'
         });
         return;

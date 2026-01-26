@@ -206,8 +206,31 @@ const InputSection: React.FC = () => {
   };
 
   const handleSaveWeek = () => {
-    if (!weekForm.date || !weekForm.gross || weekForm.week === 'Pilih Minggu' || weekForm.rt === 'Pilih RT') { Swal.fire({ icon: 'warning', title: 'Opss...', text: 'Mohon isi kolom yang kosong ! ', confirmButtonColor: '#ff0000' }); return; }
-    const gross = parseNumberInput(weekForm.gross); const { consumption, commission, net } = calculateWeeklyCuts(gross);
+    if (!weekForm.date || !weekForm.gross || weekForm.week === 'Pilih Minggu' || weekForm.rt === 'Pilih RT') { 
+        Swal.fire({ icon: 'warning', title: 'Opss...', text: 'Mohon isi kolom yang kosong ! ', confirmButtonColor: '#ff0000' }); 
+        return; 
+    }
+
+    // --- LOGIKA CEK DUPLIKAT DATA MINGGUAN ---
+    const isDuplicate = allWeeklyData.some(item => 
+        item.week === weekForm.week && 
+        item.rt === weekForm.rt && 
+        item.id !== editingId // Abaikan ID yang sedang diedit
+    );
+
+    if (isDuplicate) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Data Duplikat!',
+            text: `Data untuk ${weekForm.week} dan ${weekForm.rt} sudah ada di draf atau database.`,
+            confirmButtonColor: '#d33'
+        });
+        return;
+    }
+
+    const gross = parseNumberInput(weekForm.gross); 
+    const { consumption, commission, net } = calculateWeeklyCuts(gross);
+
     if (editingId) {
         if (editingSource === 'published') {
             confirmUpdatePublished(async () => { const dbPayload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, gross_amount: gross, consumption_cut: consumption, commission_cut: commission, net_amount: net }; const success = await updatePublishedItem('Mingguan_data', editingId, dbPayload); if (success) { Swal.fire('Sukses', 'Data di database berhasil diupdate', 'success'); cancelEdit(); } });
@@ -215,7 +238,7 @@ const InputSection: React.FC = () => {
             confirmAction('Simpan Perubahan Draft?', 'Data draft akan diperbarui.', () => { const payload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, grossAmount: gross, consumptionCut: consumption, commissionCut: commission, netAmount: net }; updateWeeklyData(editingId, payload); cancelEdit(); Swal.fire('Berhasil!', 'Draft diupdate.', 'success'); });
         }
     } else {
-        confirmAction('Simpan Data?', 'Simpan ke Draft?', () => { const payload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, grossAmount: gross, consumptionCut: consumption, commissionCut: commission, netAmount: net }; addWeeklyData(payload); setWeekForm(prev => ({ ...prev, rt: '', gross: '' })); setEditingId(null); Swal.fire('Berhasil!', 'Data disimpan.', 'success'); });
+        confirmAction('Simpan Data?', 'Simpan ke Draft?', () => { const payload = { date: weekForm.date, week: weekForm.week, rt: weekForm.rt, grossAmount: gross, consumptionCut: consumption, commissionCut: commission, netAmount: net }; addWeeklyData(payload); setWeekForm(prev => ({ ...prev, rt: 'Pilih RT', gross: '' })); setEditingId(null); Swal.fire('Berhasil!', 'Data disimpan.', 'success'); });
     }
   };
 
@@ -419,14 +442,14 @@ const InputSection: React.FC = () => {
                 <div className="col-span-1">
                     <label className="block text-[9px] md:text-[10px] text-gray-500 mb-0.5 md:mb-1 font-semibold">Minggu Ke</label>
                     <select value={weekForm.week} onChange={e => setWeekForm({...weekForm, week: e.target.value})} className={inputClass}>
-                      <option value="">Pilih Minggu</option>
+                      <option value="Pilih Minggu">Pilih Minggu</option>
                         {[...Array(30)].map((_, i) => <option key={i} value={`Minggu ke-${i+1}`}>Minggu ke-{i+1}</option>)}
                     </select>
                 </div>
                 <div className="col-span-1">
                     <label className="block text-[9px] md:text-[10px] text-gray-500 mb-0.5 md:mb-1 font-semibold">RT</label>
                     <select value={weekForm.rt} onChange={e => setWeekForm({...weekForm, rt: e.target.value})} className={inputClass}>
-                        <option value="">Pilih RT</option>
+                        <option value="Pilih RT">Pilih RT</option>
                         {[...Array(6)].map((_, i) => <option key={i} value={`RT 0${i+1}`}>RT 0{i+1}</option>)}
                     </select>
                 </div>

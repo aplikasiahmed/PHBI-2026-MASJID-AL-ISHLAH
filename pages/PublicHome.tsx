@@ -543,7 +543,7 @@ const PublicHome: React.FC = () => {
         </section>
 
         {/* DOWNLOAD PDF BUTTON - Revised Style */}
-        <div className="mt-6 mb-3 flex justify-center animate-fade-in-up px-4">
+        <div className="mt-6 mb-3 flex justify-center px-4">
             <button 
                 onClick={handleDownloadReport}
                 className="group bg-red-600 border border-white hover:bg-white text-white hover:text-red-600 active:bg-white active:text-red-600 px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 md:gap-2 transform active:scale-95 hover:scale-105 w-fit animate-pulse"

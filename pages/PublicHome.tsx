@@ -546,7 +546,7 @@ const PublicHome: React.FC = () => {
         <div className="mt-6 mb-3 flex justify-center px-4">
             <button 
                 onClick={handleDownloadReport}
-                className="group bg-red-600 border border-white hover:bg-white text-white hover:text-red-600 active:bg-white active:text-red-600 px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 md:gap-2 transform active:scale-95 hover:scale-105 w-fit animate-pulse"
+                className="group bg-red-600 border border-white hover:bg-white text-white hover:text-red-600 active:bg-white active:text-red-600 px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 md:gap-2 transform active:scale-95 hover:scale-105 w-fit"
             >
                 <div className="bg-white group-hover:bg-red-600 text-red-600 group-hover:text-white hover:text-white group-active:bg-red-600 group-active:text-white p-0.5 md:p-1 rounded-full transition-colors flex-shrink-0">
                     <FileText size={12} className="md:w-3.5 md:h-3.5" />

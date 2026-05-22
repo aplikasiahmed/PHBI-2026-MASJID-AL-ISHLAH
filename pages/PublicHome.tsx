@@ -144,6 +144,15 @@ const PublicHome: React.FC = () => {
     });
   };
 
+  const handleDownloadProposal = () => {
+    Swal.fire({
+      icon: 'info',
+      title: 'Segera Hadir',
+      text: 'Dokumen Proposal Maulid Nabi sedang dalam proses penyusunan.',
+      confirmButtonColor: '#2563eb'
+    });
+  };
+
   return (
     <div className="pb-8 min-h-screen bg-gray-50">
       
@@ -542,8 +551,8 @@ const PublicHome: React.FC = () => {
           </div>
         </section>
 
-        {/* DOWNLOAD PDF BUTTON - Revised Style */}
-        <div className="mt-6 mb-3 flex justify-center px-4">
+        {/* DOWNLOAD PDF BUTTONS */}
+        <div className="mt-6 mb-3 flex flex-col items-center gap-3 px-4">
             <button 
                 onClick={handleDownloadReport}
                 className="group bg-red-600 border border-white hover:bg-white text-white hover:text-red-600 active:bg-white active:text-red-600 px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 md:gap-2 transform active:scale-95 hover:scale-105 w-fit"
@@ -552,6 +561,16 @@ const PublicHome: React.FC = () => {
                     <FileText size={12} className="md:w-3.5 md:h-3.5" />
                 </div>
                 <span className="text-[10px] md:text-xs tracking-wide text-center leading-none">Download Laporan Keuangan PHBI (PDF)</span>
+            </button>
+
+            <button 
+                onClick={handleDownloadProposal}
+                className="group bg-blue-600 border border-white hover:bg-white text-white hover:text-blue-600 active:bg-white active:text-blue-600 px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 md:gap-2 transform active:scale-95 hover:scale-105 w-fit"
+            >
+                <div className="bg-white group-hover:bg-blue-600 text-blue-600 group-hover:text-white hover:text-white group-active:bg-blue-600 group-active:text-white p-0.5 md:p-1 rounded-full transition-colors flex-shrink-0">
+                    <FileText size={12} className="md:w-3.5 md:h-3.5" />
+                </div>
+                <span className="text-[10px] md:text-xs tracking-wide text-center leading-none">Download Proposal Maulid Nabi</span>
             </button>
         </div>
 
